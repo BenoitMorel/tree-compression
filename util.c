@@ -9,13 +9,6 @@ void printNode(pll_unode_t * node) {
 }
 
 pll_unode_t * searchRoot(pll_utree_t * tree) {
-  //printf("Tip_count: %i\n", tree->tip_count);
-  //printf("Inner_count: %i\n", tree->inner_count);
-  int nodes = (tree->tip_count + tree->inner_count);
-  /*for (size_t i = 0; i < nodes; i++) {
-    printf("%i\t", i);
-    printNode(tree->nodes[i]);
-  }*/
 
   for (size_t i = 0; i < tree->tip_count; i++) {
     if(strcmp(tree->nodes[i]->label, "1") == 0) {
@@ -60,8 +53,8 @@ int setTreeRec(pll_unode_t * tree) {
   if(tree->next == NULL) {
     // leaf
     int n = atoi(tree->label);
-    tree->data = (void*) n;
-    tree->back->data = (void*) n;
+    tree->data = (void*)(intptr_t) n;
+    tree->back->data = (void*)(intptr_t) n;
     return n;
   } else {
     // inner node
@@ -73,8 +66,8 @@ int setTreeRec(pll_unode_t * tree) {
     int n2 = setTreeRec(tree->next->next->back);
     int n;
     n1 < n2 ? (n = n1) : (n = n2);
-    tree->data = (void*) n;
-    tree->back->data = (void*) n;
+    tree->data = (void*)(intptr_t) n;
+    tree->back->data = (void*)(intptr_t) n;
     return n;
   }
 }
@@ -86,7 +79,7 @@ void setTree(pll_unode_t * tree) {
 
 }
 
-void assignBranchLengthsRec(pll_unode_t * tree, unsigned int * n, unsigned int* node_id_to_branch_id) {
+void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * n, unsigned int* node_id_to_branch_id) {
   assert(tree != NULL);
   if(tree->next == NULL) {
     // leaf
@@ -107,27 +100,27 @@ void assignBranchLengthsRec(pll_unode_t * tree, unsigned int * n, unsigned int* 
     node_id_to_branch_id[tree->back->node_index] = *n;
     (*n)++;
     //printNode(tree);
-    int n1 = (int) tree->next->data;
-    int n2 = (int) tree->next->next->data;
+    int n1 = (intptr_t) tree->next->data;
+    int n2 = (intptr_t) tree->next->next->data;
     if(n1 < n2) {
       //printNode(tree->next);
-      assignBranchLengthsRec(tree->next->back, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->back, n, node_id_to_branch_id);
       //printNode(tree->next->next);
-      assignBranchLengthsRec(tree->next->next->back, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->next->back, n, node_id_to_branch_id);
     } else {
       //printNode(tree->next->next);
-      assignBranchLengthsRec(tree->next->next->back, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->next->back, n, node_id_to_branch_id);
       //printNode(tree->next);
-      assignBranchLengthsRec(tree->next->back, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->back, n, node_id_to_branch_id);
     }
 
   }
 }
 
-void assignBranchLengths(pll_unode_t * tree, unsigned int* node_id_to_branch_id) {
+void assignBranchNumbers(pll_unode_t * tree, unsigned int* node_id_to_branch_id) {
   assert(tree->next == NULL);
   //printf("1\t");
   //printNode(tree);
   unsigned int n = 2;
-  assignBranchLengthsRec(tree->back, &n, node_id_to_branch_id);
+  assignBranchNumbersRec(tree->back, &n, node_id_to_branch_id);
 }

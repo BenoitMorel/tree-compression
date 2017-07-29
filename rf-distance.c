@@ -64,7 +64,7 @@ int main (int argc, char * argv[])
   setTree(root);
   // create a mapping from node_ids in tree1 to branch numbers
   unsigned int* node_id_to_branch_id = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
-  assignBranchLengths(root, node_id_to_branch_id);
+  assignBranchNumbers(root, node_id_to_branch_id);
 
   /*for (size_t i = 0; i < (tree1->inner_count * 3 + tree1->tip_count); i++) {
       printf("Index: %i, Edge: %u\n", i, node_id_to_branch_id[i]);
@@ -139,7 +139,7 @@ int main (int argc, char * argv[])
   //printf("distance = %d\n", rf_dist);
   //printf("relative = %.2f%%\n", 100.0*rf_dist/(2*(tip_count-3)));
 
-  printf("same branchs = %d\n", same_branchs);
+  printf("Amount of branchs with same lengths = %d\n", same_branchs);
 
   pllmod_utree_split_destroy(splits1);
   pllmod_utree_split_destroy(splits2);

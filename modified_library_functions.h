@@ -11,7 +11,7 @@ unsigned int bitv_length(unsigned int bit_count);
 
 // original method from the library.
 // return the amount of same splits.
-static int compare_splits (pll_split_t s1,
+int compare_splits (pll_split_t s1,
                            pll_split_t s2,
                            unsigned int split_len);
 
