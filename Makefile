@@ -32,13 +32,13 @@ WARN=-Wall -Wsign-compare $(ADD_WARN)
 CFLAGS = -g -O3 -Wall -Wsign-compare $(PROFILING) $(WARN)
 LDFLAGS = -lpll_tree -lpll -lm
 
-OBJS = rf-distance.o modified_library_functions.o util.o 
-PROG = rf-distance
+OBJS = main.o modified_library_functions.o util.o 
+PROG = main
 
 default: all
 all : $(PROG)
 
-rf-distance : $(OBJS)
+main : $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(PROG)
 
 %.o: %.c
