@@ -18,14 +18,20 @@
  Exelixis Lab, Heidelberg Instutute for Theoretical Studies
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
+#ifdef __cplusplus
+extern "C" {
+#endif
 #include <libpll/pll_tree.h>
 
+#include "modified_library_functions.h"
+#ifdef __cplusplus
+}
+#endif
 
 #include <assert.h>
 #include <stdarg.h>
 
 #include "util.h"
-#include "modified_library_functions.h"
 
 /* set to 1 for printing splits */
 #define PRINT_SPLITS 0

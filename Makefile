@@ -41,7 +41,7 @@ all : $(PROG)
 main : $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(PROG)
 
-%.o: %.c
+%.o: %.c %.cpp
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 clean:
