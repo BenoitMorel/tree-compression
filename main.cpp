@@ -18,6 +18,9 @@
  Exelixis Lab, Heidelberg Instutute for Theoretical Studies
  Schloss-Wolfsbrunnenweg 35, D-69118 Heidelberg, Germany
  */
+#include <assert.h>
+#include <stdarg.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -28,8 +31,7 @@ extern "C" {
 }
 #endif
 
-#include <assert.h>
-#include <stdarg.h>
+#include <sdsl/bit_vectors.hpp>
 
 #include "util.h"
 
@@ -69,8 +71,14 @@ int main (int argc, char * argv[])
   // set the tree
   setTree(root);
   // create a mapping from node_ids in tree1 to branch numbers
+  sdsl::bit_vector succinct_structure(4 * tip_count - 2, 0);
   unsigned int* node_id_to_branch_id = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
-  assignBranchNumbers(root, node_id_to_branch_id);
+  assignBranchNumbers(root, succinct_structure, node_id_to_branch_id);
+
+  printf("\n");
+  std::cout << succinct_structure << "\n";
+  std::cout << "      Size: " << succinct_structure.serialize(std::cout);
+  std::cout << "\n";
 
   /*for (size_t i = 0; i < (tree1->inner_count * 3 + tree1->tip_count); i++) {
       printf("Index: %i, Edge: %u\n", i, node_id_to_branch_id[i]);

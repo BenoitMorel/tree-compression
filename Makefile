@@ -20,7 +20,7 @@
 # Profiling
 OS = $(shell uname -s)
 PROFILING=-g
-CC ?= g++
+CC ?= clang
 
 # Compiler warnings
 ifeq ($(CC),clang)
@@ -30,7 +30,8 @@ endif
 WARN=-Wall -Wsign-compare $(ADD_WARN)
 
 CFLAGS = -g -O3 -Wall -Wsign-compare $(PROFILING) $(WARN)
-LDFLAGS = -lpll_tree -lpll -lm
+CPPFLAGS = -std=c++11
+LDFLAGS = -lpll_tree -lpll -lm -lsdsl -ldivsufsort -ldivsufsort64 -lstdc++
 
 OBJS = main.o modified_library_functions.o util.o 
 PROG = main
