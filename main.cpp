@@ -32,6 +32,7 @@ extern "C" {
 #endif
 
 #include <sdsl/bit_vectors.hpp>
+#include <sdsl/int_vector.hpp>
 
 #include "util.h"
 
@@ -72,12 +73,12 @@ int main (int argc, char * argv[])
   setTree(root);
   // create a mapping from node_ids in tree1 to branch numbers
   sdsl::bit_vector succinct_structure(4 * tip_count - 2, 0);
+  sdsl::int_vector<> node_permutation(tip_count, 0, 32);
   unsigned int* node_id_to_branch_id = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
-  assignBranchNumbers(root, succinct_structure, node_id_to_branch_id);
+  assignBranchNumbers(root, succinct_structure, node_permutation, node_id_to_branch_id);
 
-  printf("\n");
-  std::cout << succinct_structure << "\n";
-  std::cout << "      Size: " << succinct_structure.serialize(std::cout);
+  std::cout << "Succinct representation: " << succinct_structure << "\n";
+  std::cout << "Node permutation: " << node_permutation << "\n";
   std::cout << "\n";
 
   /*for (size_t i = 0; i < (tree1->inner_count * 3 + tree1->tip_count); i++) {

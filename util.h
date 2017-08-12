@@ -32,4 +32,4 @@ void setTree(pll_unode_t * tree);
  * Fill an array that maps node_id's to branch numbers (according to later
  * position in the succinct balanced parantheses representation)
  */
-void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, unsigned int* node_id_to_branch_id);
+void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vector<> &iv, unsigned int* node_id_to_branch_id);

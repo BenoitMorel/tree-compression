@@ -79,7 +79,7 @@ void setTree(pll_unode_t * tree) {
 
 }
 
-void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit_vector &bp, unsigned int * n, unsigned int* node_id_to_branch_id) {
+void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit_vector &bp, unsigned int * iv_idx, sdsl::int_vector<> &iv, unsigned int * n, unsigned int* node_id_to_branch_id) {
   assert(tree != NULL);
   if(tree->next == NULL) {
     // leaf
@@ -87,6 +87,8 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
     node_id_to_branch_id[tree->node_index] = *n;
     node_id_to_branch_id[tree->back->node_index] = *n;
     (*n)++;
+    iv[*iv_idx] = atoi(tree->label);
+    (*iv_idx)++;
     //printf("%s, ", tree->label);
     //printf("Node: ");
     //printNode(tree);
@@ -107,26 +109,26 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
       //printNode(tree->next);
       bp[*bp_idx] = 0;
       (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->back, bp_idx, bp, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->back, bp_idx, bp, iv_idx, iv, n, node_id_to_branch_id);
       bp[*bp_idx] = 1;
       (*bp_idx)++;
       //printNode(tree->next->next);
       bp[*bp_idx] = 0;
       (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->next->back, bp_idx, bp, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->next->back, bp_idx, bp, iv_idx, iv, n, node_id_to_branch_id);
       bp[*bp_idx] = 1;
       (*bp_idx)++;
     } else {
       //printNode(tree->next->next);
       bp[*bp_idx] = 0;
       (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->next->back, bp_idx, bp, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->next->back, bp_idx, bp, iv_idx, iv, n, node_id_to_branch_id);
       bp[*bp_idx] = 1;
       (*bp_idx)++;
       //printNode(tree->next);
       bp[*bp_idx] = 0;
       (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->back, bp_idx, bp, n, node_id_to_branch_id);
+      assignBranchNumbersRec(tree->next->back, bp_idx, bp, iv_idx, iv, n, node_id_to_branch_id);
       bp[*bp_idx] = 1;
       (*bp_idx)++;
     }
@@ -134,20 +136,23 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
   }
 }
 
-void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, unsigned int* node_id_to_branch_id) {
+void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vector<> &iv, unsigned int* node_id_to_branch_id) {
   assert(tree->next == NULL);
+  assert(atoi(tree->label) == 1);
   bp[0] = 0;
   bp[1] = 0;
   bp[2] = 1;
-  //printf("%s, ", tree->label);
+  iv[0] = 1; // first node is always the root
   //printNode(tree);
   unsigned int n = 2;
   bp[3] = 0;
   unsigned int bp_idx = 4;
-  assignBranchNumbersRec(tree->back, &bp_idx, bp, &n, node_id_to_branch_id);
+  unsigned int iv_idx = 1;
+  assignBranchNumbersRec(tree->back, &bp_idx, bp, &iv_idx, iv, &n, node_id_to_branch_id);
   bp[bp_idx] = 1;
   bp_idx++;
   bp[bp_idx] = 1;
   bp_idx++;
   assert(bp_idx == bp.size());
+  assert(iv_idx == iv.size());
 }
