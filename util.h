@@ -22,7 +22,7 @@ void printTree(pll_unode_t * tree);
 /*
  * Traverses the given tree, storing for each node in the (void*) data
  * field the number of the smallest leaf underneath this node.
- * After this method has been performed, the tree can be traversed such
+ * After this method has been called, the tree can be traversed such
  * that the leafs can be visited in ascending order.
  */
 void setTree(pll_unode_t * tree);
@@ -33,3 +33,8 @@ void setTree(pll_unode_t * tree);
  * position in the succinct balanced parantheses representation)
  */
 void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vector<> &iv, std::vector<double> &branch_lengths, unsigned int* node_id_to_branch_id);
+
+/*
+ * Contracts the edge between node and node->back.
+ */
+void contractEdge(pll_unode_t * node);

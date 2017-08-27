@@ -161,3 +161,27 @@ void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vec
   assert(bp_idx == bp.size());
   assert(iv_idx == iv.size());
 }
+
+/*
+ * Searches the internal predecessor p of a node and returns a pointer to it.
+ * The node p fulfills p->next = node.
+ */
+pll_unode_t * internalPredecessor(pll_unode_t * node) {
+  pll_unode_t * predecessor = node;
+  while(predecessor->next->node_index != node->node_index) {
+    predecessor = predecessor->next;
+  }
+  assert(predecessor->next->node_index != node->node_index);
+  return predecessor;
+}
+
+void contractEdge(pll_unode_t * node) {
+  assert(node != NULL);
+  assert(node->back != NULL);
+  pll_unode_t * node_back_predecessor = internalPredecessor(node->back);
+  pll_unode_t * node_back_successor = node->back->next;
+  pll_unode_t * node_predecessor = internalPredecessor(node);
+  pll_unode_t * node_successor = node->next;
+  node_predecessor->next = node_back_successor;
+  node_back_predecessor->next = node_successor;
+}
