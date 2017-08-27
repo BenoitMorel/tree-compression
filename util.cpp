@@ -79,6 +79,10 @@ void setTree(pll_unode_t * tree) {
 
 }
 
+bool innerNodeCompare(pll_unode_t * node1, pll_unode_t * node2) {
+  return ((intptr_t) node1->data) < ((intptr_t) node2->data);
+}
+
 void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit_vector &bp,
               unsigned int * iv_idx, sdsl::int_vector<> &iv, unsigned int * bl_idx, std::vector<double> &branch_lengths,
               unsigned int * n, unsigned int* node_id_to_branch_id) {
@@ -87,6 +91,7 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
   (*bl_idx)++;
   if(tree->next == NULL) {
     // leaf
+
     //printf("%i\t", *n);
     node_id_to_branch_id[tree->node_index] = *n;
     node_id_to_branch_id[tree->back->node_index] = *n;
@@ -99,15 +104,41 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
   } else {
     // inner node
     assert(tree->next != NULL);
-    assert(tree->next->next != NULL);
-    assert(tree->next->back != NULL);
-    assert(tree->next->next->back != NULL);
+
+    // assign inner nodes to an array
+    std::vector<pll_unode_t*> inner_nodes;
+    pll_unode_t * temp_node = tree->next;
+    while(temp_node->node_index != tree->node_index) {
+      inner_nodes.push_back(temp_node);
+      assert(temp_node->next != NULL);
+      temp_node = temp_node->next;
+    }
+    assert(temp_node->node_index == tree->node_index);
+
+    // sort the internal nodes
+    std::sort (inner_nodes.begin(), inner_nodes.end(), innerNodeCompare);
+
+    for (size_t i = 0; i < inner_nodes.size(); i++) {
+      std::cout << (intptr_t) inner_nodes[i]->data << ", ";
+    }
+    std::cout << "\n";
+
     //printf("%i\t", *n);
     node_id_to_branch_id[tree->node_index] = *n;
     node_id_to_branch_id[tree->back->node_index] = *n;
     (*n)++;
     //printNode(tree);
-    int n1 = (intptr_t) tree->next->data;
+
+    for (size_t i = 0; i < inner_nodes.size(); i++) {
+      bp[*bp_idx] = 0;
+      (*bp_idx)++;
+      assignBranchNumbersRec(inner_nodes[i]->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
+      bp[*bp_idx] = 1;
+      (*bp_idx)++;
+    }
+
+
+    /*int n1 = (intptr_t) tree->next->data;
     int n2 = (intptr_t) tree->next->next->data;
     if(n1 < n2) {
       //printNode(tree->next);
@@ -135,12 +166,13 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
       assignBranchNumbersRec(tree->next->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
       bp[*bp_idx] = 1;
       (*bp_idx)++;
-    }
+    }*/
 
   }
 }
 
-void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vector<> &iv, std::vector<double> &branch_lengths, unsigned int* node_id_to_branch_id) {
+void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vector<> &iv,
+                std::vector<double> &branch_lengths, unsigned int* node_id_to_branch_id) {
   assert(tree->next == NULL);
   assert(atoi(tree->label) == 1);
   bp[0] = 0;
@@ -171,7 +203,7 @@ pll_unode_t * internalPredecessor(pll_unode_t * node) {
   while(predecessor->next->node_index != node->node_index) {
     predecessor = predecessor->next;
   }
-  assert(predecessor->next->node_index != node->node_index);
+  assert(predecessor->next->node_index == node->node_index);
   return predecessor;
 }
 
