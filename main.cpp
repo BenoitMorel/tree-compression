@@ -38,6 +38,10 @@ int main (int argc, char * argv[])
   std::cout << "Simple compression of tree 2: \n";
   simple_compression(argv[2]);
   std::cout << "\n";
+
+  std::cout << "RF-compression: \n";
+  rf_distance_compression(argv[1], argv[2]);
+  std::cout << "\n";
 }
 
 /******************************************************************************/

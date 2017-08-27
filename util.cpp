@@ -118,10 +118,10 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
     // sort the internal nodes
     std::sort (inner_nodes.begin(), inner_nodes.end(), innerNodeCompare);
 
-    for (size_t i = 0; i < inner_nodes.size(); i++) {
+    /*for (size_t i = 0; i < inner_nodes.size(); i++) {
       std::cout << (intptr_t) inner_nodes[i]->data << ", ";
     }
-    std::cout << "\n";
+    std::cout << "\n";*/
 
     //printf("%i\t", *n);
     node_id_to_branch_id[tree->node_index] = *n;

@@ -14,6 +14,8 @@ extern "C" {
 #include <sdsl/bit_vectors.hpp>
 #include <sdsl/int_vector.hpp>
 #include <sdsl/vectors.hpp>
+#include <sdsl/select_support_mcl.hpp>
+#include <algorithm>
 
 #include "util.h"
 
