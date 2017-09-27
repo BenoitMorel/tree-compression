@@ -22,7 +22,7 @@ void printTree(pll_unode_t * tree);
 /*
  * Traverses the given tree, storing for each node in the (void*) data
  * field the number of the smallest leaf underneath this node.
- * After this method has been called, the tree can be traversed such
+ * After this method has been called, the tree can be traversed such a way
  * that the leafs can be visited in ascending order.
  */
 void setTree(pll_unode_t * tree);

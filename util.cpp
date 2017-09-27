@@ -34,18 +34,18 @@ void printTreeRec(pll_unode_t * tree) {
     assert(tree->next->next->back != NULL);
     printNode(tree);
     printNode(tree->next);
-    printNode(tree->next->next);
     printTreeRec(tree->next->back);
+    printNode(tree->next->next);
     printTreeRec(tree->next->next->back);
   }
 }
 
 void printTree(pll_unode_t * tree) {
-  assert(tree->next == NULL);
-
-  printNode(tree);
-  printTreeRec(tree->back);
-
+  if(tree == NULL) {
+    return;
+  } else {
+    printTreeRec(tree);
+  }
 }
 
 int setTreeRec(pll_unode_t * tree) {
