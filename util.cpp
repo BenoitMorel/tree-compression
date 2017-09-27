@@ -44,7 +44,13 @@ void printTree(pll_unode_t * tree) {
   if(tree == NULL) {
     return;
   } else {
-    printTreeRec(tree);
+    if(tree->next == NULL && tree->back != NULL) {
+      // leaf is given as the root
+      printNode(tree);
+      printTreeRec(tree->back);
+    } else {
+      printTreeRec(tree);
+    }
   }
 }
 
