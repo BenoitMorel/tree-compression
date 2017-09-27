@@ -6,13 +6,13 @@
 /* static functions */
 static void fatal (const char * format, ...);
 
-std::vector<int> traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
+std::tuple<std::vector<int>, std::vector<int>> traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
   assert(tree != NULL);
-  std::vector<int> return_vector;
+  std::vector<int> return_vector_topology;
+  std::vector<int> return_vector_order;
   if(tree->next == NULL) {
     // leaf; edge incident is always present in both trees
     //std::cout << "Leaf: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
-    return return_vector;
   } else {
     // inner node
     assert(tree->next != NULL);
@@ -22,39 +22,49 @@ std::vector<int> traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &ed
 
     //std::cout << "Inner node: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
 
-    //std::cout << "\n1. Inner node: " << tree->next->node_index <<
-    //    "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->node_index] << "\n";
+    //std::cout << "1. Inner node: " << tree->next->node_index <<
+      // "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->node_index] << "\n";
     if(edgeIncidentPresent2[tree->next->node_index]) {
-          return_vector.push_back(0);
-          std::vector<int> temp = traverseTreeRec(tree->next->back, edgeIncidentPresent2, tasks);
-          return_vector.insert(return_vector.end(), temp.begin(), temp.end());
-          return_vector.push_back(1);
+          return_vector_topology.push_back(0);
+          std::vector<int> temp_topology;
+          std::vector<int> temp_order;
+          std::tie (temp_topology, temp_order) = traverseTreeRec(tree->next->back, edgeIncidentPresent2, tasks);
+          return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
+          return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
+          return_vector_topology.push_back(1);
     } else {
+          return_vector_order.push_back((intptr_t) tree->next->back->data);
           tasks.push(tree->next->back);
     }
-    //std::cout << "\n2. Inner node: " << tree->next->next->node_index <<
-    //    "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->next->node_index] << "\n";
+    //std::cout << "2. Inner node: " << tree->next->next->node_index <<
+      // "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->next->node_index] << "\n";
     if(edgeIncidentPresent2[tree->next->next->node_index]) {
-          return_vector.push_back(0);
-          std::vector<int> temp = traverseTreeRec(tree->next->next->back, edgeIncidentPresent2, tasks);
-          return_vector.insert(return_vector.end(), temp.begin(), temp.end());
-          return_vector.push_back(1);
+          return_vector_topology.push_back(0);
+          std::vector<int> temp_topology;
+          std::vector<int> temp_order;
+          std::tie (temp_topology, temp_order) = traverseTreeRec(tree->next->next->back, edgeIncidentPresent2, tasks);
+          return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
+          return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
+          return_vector_topology.push_back(1);
     } else {
+          return_vector_order.push_back((intptr_t) tree->next->next->back->data);
           tasks.push(tree->next->next->back);
     }
   }
+  return std::make_tuple(return_vector_topology, return_vector_order);
 }
 
-std::vector<int> traverseTree(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
-  std::vector<int> ret;
+std::tuple<std::vector<int>, std::vector<int>> traverseTree(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
+  std::vector<int> return_topology;
+  std::vector<int> return_order;
   if(tasks.empty()) {
-    return ret;
+    return std::make_tuple(return_topology, return_order);
   }
   pll_unode_t * tree = tasks.front();
   tasks.pop();
 
   if(tree == NULL) {
-    return ret;
+    return std::make_tuple(return_topology, return_order);
   } else {
       return traverseTreeRec(tree, edgeIncidentPresent2, tasks);
   }
@@ -243,7 +253,10 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   }
 
   sort(edges_to_contract.begin(), edges_to_contract.end());
-  std::cout << "Edges to contract in tree 1: " << edges_to_contract;
+  std::cout << "Edges to contract in tree 1: " << edges_to_contract << "\n";
+  std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(edges_to_contract) << " bytes\n";
+  //sdsl::util::bit_compress(succinct_structure);
+  //std::cout << "\tcompressed size: " << sdsl::size_in_bytes(succinct_structure) << " bytes\n";
   printf("\n\n");
 
   // create a mapping from node_ids in tree1 to branch numbers
@@ -289,17 +302,20 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   tasks.push(root2->back);
 
   std::vector<std::vector<int>> subtrees;
+  std::vector<std::vector<int>> permutations;
 
   //printTree(root2);
   while(!tasks.empty()) {
-      std::cout << " ";
-      std::vector<int> subtree = traverseTree(tasks, edgeIncidentPresent2);
+      std::vector<int> subtree;
+      std::vector<int> leaf_order;
+      std::tie(subtree, leaf_order) = traverseTree(tasks, edgeIncidentPresent2);
       if(!subtree.empty()) {
           subtrees.push_back(subtree);
+          permutations.push_back(leaf_order);
       }
   }
 
-  std::cout << "\nSubtrees: ";
+  std::cout << "\nSubtrees: \n";
   for (std::vector<int> i: subtrees) {
      for (auto j : i) {
          std::cout << j;
@@ -307,6 +323,13 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
      std::cout << " ";
   }
 
+  std::cout << "\nPermutations: \n";
+  for (std::vector<int> i: permutations) {
+     for (auto j : i) {
+         std::cout << j << ",";
+     }
+     std::cout << "\n";
+  }
 
   //printf("RF [manual]\n");
   //printf("distance = %d\n", rf_dist);
