@@ -6,11 +6,13 @@
 /* static functions */
 static void fatal (const char * format, ...);
 
-void traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
+std::vector<int> traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
   assert(tree != NULL);
+  std::vector<int> return_vector;
   if(tree->next == NULL) {
     // leaf; edge incident is always present in both trees
     //std::cout << "Leaf: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
+    return return_vector;
   } else {
     // inner node
     assert(tree->next != NULL);
@@ -23,35 +25,38 @@ void traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPr
     //std::cout << "\n1. Inner node: " << tree->next->node_index <<
     //    "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->node_index] << "\n";
     if(edgeIncidentPresent2[tree->next->node_index]) {
-          std::cout << "0";
-          traverseTreeRec(tree->next->back, edgeIncidentPresent2, tasks);
-          std::cout << "1";
+          return_vector.push_back(0);
+          std::vector<int> temp = traverseTreeRec(tree->next->back, edgeIncidentPresent2, tasks);
+          return_vector.insert(return_vector.end(), temp.begin(), temp.end());
+          return_vector.push_back(1);
     } else {
           tasks.push(tree->next->back);
     }
     //std::cout << "\n2. Inner node: " << tree->next->next->node_index <<
     //    "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->next->node_index] << "\n";
     if(edgeIncidentPresent2[tree->next->next->node_index]) {
-          std::cout << "0";
-          traverseTreeRec(tree->next->next->back, edgeIncidentPresent2, tasks);
-          std::cout << "1";
+          return_vector.push_back(0);
+          std::vector<int> temp = traverseTreeRec(tree->next->next->back, edgeIncidentPresent2, tasks);
+          return_vector.insert(return_vector.end(), temp.begin(), temp.end());
+          return_vector.push_back(1);
     } else {
           tasks.push(tree->next->next->back);
     }
   }
 }
 
-void traverseTree(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
+std::vector<int> traverseTree(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
+  std::vector<int> ret;
   if(tasks.empty()) {
-    return;
+    return ret;
   }
   pll_unode_t * tree = tasks.front();
   tasks.pop();
 
   if(tree == NULL) {
-    return;
+    return ret;
   } else {
-      traverseTreeRec(tree, edgeIncidentPresent2, tasks);
+      return traverseTreeRec(tree, edgeIncidentPresent2, tasks);
   }
 }
 
@@ -219,14 +224,14 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   sdsl::int_vector<> edges_to_contract(rf_distance / 2, 0);
   size_t idx = 0;
 
-  std::cout << "\ns1_present\n";
+  /*std::cout << "\ns1_present\n";
   for (size_t i = 0; i < n_splits; i++) {
       std::cout << i << ":\t" << s1_present[i] << "\t" << node_id_to_branch_id1[splits_to_node1[i]->node_index] << "\n";
   }
   std::cout << "\ns2_present\n";
   for (size_t i = 0; i < n_splits; i++) {
       std::cout << i << ":\t" << s2_present[i] << "\t" << node_id_to_branch_id2[splits_to_node2[i]->node_index] << "\n";
-  }
+  }*/
 
 
   for (size_t i = 0; i < n_splits; i++) {
@@ -283,10 +288,23 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   std::queue<pll_unode_t *> tasks;
   tasks.push(root2->back);
 
+  std::vector<std::vector<int>> subtrees;
+
   //printTree(root2);
   while(!tasks.empty()) {
       std::cout << " ";
-      traverseTree(tasks, edgeIncidentPresent2);
+      std::vector<int> subtree = traverseTree(tasks, edgeIncidentPresent2);
+      if(!subtree.empty()) {
+          subtrees.push_back(subtree);
+      }
+  }
+
+  std::cout << "\nSubtrees: ";
+  for (std::vector<int> i: subtrees) {
+     for (auto j : i) {
+         std::cout << j;
+     }
+     std::cout << " ";
   }
 
 
