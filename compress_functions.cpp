@@ -1,13 +1,61 @@
 #include "compress_functions.h"
 
 /* set to 1 for printing splits */
-#define PRINT_SPLITS 0
+#define PRINT_SPLITS 1
 
 /* static functions */
 static void fatal (const char * format, ...);
 
-void simple_compression(char * tree_file) {
+void traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
+  assert(tree != NULL);
+  if(tree->next == NULL) {
+    // leaf; edge incident is always present in both trees
+    //std::cout << "Leaf: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
+  } else {
+    // inner node
+    assert(tree->next != NULL);
+    assert(tree->next->next != NULL);
+    assert(tree->next->back != NULL);
+    assert(tree->next->next->back != NULL);
 
+    //std::cout << "Inner node: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
+
+    //std::cout << "\n1. Inner node: " << tree->next->node_index <<
+    //    "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->node_index] << "\n";
+    if(edgeIncidentPresent2[tree->next->node_index]) {
+          std::cout << "0";
+          traverseTreeRec(tree->next->back, edgeIncidentPresent2, tasks);
+          std::cout << "1";
+    } else {
+          tasks.push(tree->next->back);
+    }
+    //std::cout << "\n2. Inner node: " << tree->next->next->node_index <<
+    //    "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->next->node_index] << "\n";
+    if(edgeIncidentPresent2[tree->next->next->node_index]) {
+          std::cout << "0";
+          traverseTreeRec(tree->next->next->back, edgeIncidentPresent2, tasks);
+          std::cout << "1";
+    } else {
+          tasks.push(tree->next->next->back);
+    }
+  }
+}
+
+void traverseTree(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
+  if(tasks.empty()) {
+    return;
+  }
+  pll_unode_t * tree = tasks.front();
+  tasks.pop();
+
+  if(tree == NULL) {
+    return;
+  } else {
+      traverseTreeRec(tree, edgeIncidentPresent2, tasks);
+  }
+}
+
+void simple_compression(char * tree_file) {
   /* tree properties */
   pll_utree_t * tree = NULL;
   unsigned int tip_count;
@@ -140,6 +188,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
                                                     tip_count,
                                                     splits_to_node2);
 
+
 #if(PRINT_SPLITS)
   {
     unsigned int i;
@@ -169,6 +218,17 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   assert(rf_distance % 2 == 0);
   sdsl::int_vector<> edges_to_contract(rf_distance / 2, 0);
   size_t idx = 0;
+
+  std::cout << "\ns1_present\n";
+  for (size_t i = 0; i < n_splits; i++) {
+      std::cout << i << ":\t" << s1_present[i] << "\t" << node_id_to_branch_id1[splits_to_node1[i]->node_index] << "\n";
+  }
+  std::cout << "\ns2_present\n";
+  for (size_t i = 0; i < n_splits; i++) {
+      std::cout << i << ":\t" << s2_present[i] << "\t" << node_id_to_branch_id2[splits_to_node2[i]->node_index] << "\n";
+  }
+
+
   for (size_t i = 0; i < n_splits; i++) {
       if(s1_present[i] == 0) {
           contractEdge(splits_to_node1[i]);
@@ -195,6 +255,41 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
 
   std::cout << "Consensus tree after edge contraction: " << consensus_succinct_structure1 << "\n";
 
+
+
+
+  // create an array that indicates whether the edge incident to the node_id in tree 2 is common
+  // in both trees or not
+  std::vector<bool> edgeIncidentPresent2 (tree2->inner_count * 3 + tree2->tip_count);
+  for (unsigned int i=0; i<n_splits; ++i)
+  {
+
+    if(s2_present[i] == 0) {
+      // edge is not common in both trees
+      edgeIncidentPresent2[splits_to_node2[i]->node_index] = true;
+      edgeIncidentPresent2[splits_to_node2[i]->back->node_index] = true;
+    } else {
+      // edge is common in both trees
+      edgeIncidentPresent2[splits_to_node2[i]->node_index] = false;
+      edgeIncidentPresent2[splits_to_node2[i]->back->node_index] = false;
+    }
+  }
+
+  /*std::cout << "edgeIncidentPresent2:\n";
+  for(int i = 0; i < edgeIncidentPresent2.size(); i++) {
+    std::cout << i << ": " << edgeIncidentPresent2[i] << "\n";
+  }*/
+
+  std::queue<pll_unode_t *> tasks;
+  tasks.push(root2->back);
+
+  //printTree(root2);
+  while(!tasks.empty()) {
+      std::cout << " ";
+      traverseTree(tasks, edgeIncidentPresent2);
+  }
+
+
   //printf("RF [manual]\n");
   //printf("distance = %d\n", rf_dist);
   //printf("relative = %.2f%%\n", 100.0*rf_dist/(2*(tip_count-3)));
@@ -215,6 +310,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   free(s2_present);
 
 }
+
 
 
 /******************************************************************************/
