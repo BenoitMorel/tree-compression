@@ -137,6 +137,21 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
   } else {
     // inner node
     assert(tree->next != NULL);
+    assert(tree->next->next != NULL);
+    assert(tree->next->next->next == tree); // tree has to be binary
+
+    // assign inner nodes to an array
+    std::vector<pll_unode_t*> inner_nodes;
+    pll_unode_t * temp_node = tree->next;
+    while(temp_node->node_index != tree->node_index) {
+      inner_nodes.push_back(temp_node);
+      assert(temp_node->next != NULL);
+      temp_node = temp_node->next;
+    }
+    assert(temp_node->node_index == tree->node_index);
+
+    // sort the internal nodes
+    std::sort (inner_nodes.begin(), inner_nodes.end(), innerNodeCompare);
 
     /*for (size_t i = 0; i < inner_nodes.size(); i++) {
       std::cout << (intptr_t) inner_nodes[i]->data << ", ";
@@ -149,15 +164,14 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
     (*n)++;
     //printNode(tree);
 
-    pll_unode_t * current_node = tree->next;
-    while(current_node != tree) {
+    for (size_t i = 0; i < inner_nodes.size(); i++) {
       bp[*bp_idx] = 0;
       (*bp_idx)++;
-      assignBranchNumbersRec(current_node->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
+      assignBranchNumbersRec(inner_nodes[i]->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
       bp[*bp_idx] = 1;
       (*bp_idx)++;
-      current_node = current_node->next;
     }
+
 
     /*int n1 = (intptr_t) tree->next->data;
     int n2 = (intptr_t) tree->next->next->data;
