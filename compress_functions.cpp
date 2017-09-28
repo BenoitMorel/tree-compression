@@ -6,70 +6,6 @@
 /* static functions */
 static void fatal (const char * format, ...);
 
-std::tuple<std::vector<int>, std::vector<int>> traverseTreeRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
-  assert(tree != NULL);
-  std::vector<int> return_vector_topology;
-  std::vector<int> return_vector_order;
-  if(tree->next == NULL) {
-    // leaf; edge incident is always present in both trees
-    //std::cout << "Leaf: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
-  } else {
-    // inner node
-    assert(tree->next != NULL);
-    assert(tree->next->next != NULL);
-    assert(tree->next->back != NULL);
-    assert(tree->next->next->back != NULL);
-
-    //std::cout << "Inner node: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
-
-    //std::cout << "1. Inner node: " << tree->next->node_index <<
-      // "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->node_index] << "\n";
-    if(edgeIncidentPresent2[tree->next->node_index]) {
-          return_vector_topology.push_back(0);
-          std::vector<int> temp_topology;
-          std::vector<int> temp_order;
-          std::tie (temp_topology, temp_order) = traverseTreeRec(tree->next->back, edgeIncidentPresent2, tasks);
-          return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
-          return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
-          return_vector_topology.push_back(1);
-    } else {
-          return_vector_order.push_back((intptr_t) tree->next->back->data);
-          tasks.push(tree->next->back);
-    }
-    //std::cout << "2. Inner node: " << tree->next->next->node_index <<
-      // "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->next->node_index] << "\n";
-    if(edgeIncidentPresent2[tree->next->next->node_index]) {
-          return_vector_topology.push_back(0);
-          std::vector<int> temp_topology;
-          std::vector<int> temp_order;
-          std::tie (temp_topology, temp_order) = traverseTreeRec(tree->next->next->back, edgeIncidentPresent2, tasks);
-          return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
-          return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
-          return_vector_topology.push_back(1);
-    } else {
-          return_vector_order.push_back((intptr_t) tree->next->next->back->data);
-          tasks.push(tree->next->next->back);
-    }
-  }
-  return std::make_tuple(return_vector_topology, return_vector_order);
-}
-
-std::tuple<std::vector<int>, std::vector<int>> traverseTree(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
-  std::vector<int> return_topology;
-  std::vector<int> return_order;
-  if(tasks.empty()) {
-    return std::make_tuple(return_topology, return_order);
-  }
-  pll_unode_t * tree = tasks.front();
-  tasks.pop();
-
-  if(tree == NULL) {
-    return std::make_tuple(return_topology, return_order);
-  } else {
-      return traverseTreeRec(tree, edgeIncidentPresent2, tasks);
-  }
-}
-
 void simple_compression(char * tree_file) {
   /* tree properties */
   pll_utree_t * tree = NULL;
@@ -107,6 +43,70 @@ void simple_compression(char * tree_file) {
     std::cout << x << " ";
   }
   std::cout << "\n\n";
+}
+
+std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
+  assert(tree != NULL);
+  std::vector<int> return_vector_topology;
+  std::vector<int> return_vector_order;
+  if(tree->next == NULL) {
+    // leaf; edge incident is always present in both trees
+    //std::cout << "Leaf: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
+  } else {
+    // inner node
+    assert(tree->next != NULL);
+    assert(tree->next->next != NULL);
+    assert(tree->next->back != NULL);
+    assert(tree->next->next->back != NULL);
+
+    //std::cout << "Inner node: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
+
+    //std::cout << "1. Inner node: " << tree->next->node_index <<
+      // "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->node_index] << "\n";
+    if(edgeIncidentPresent2[tree->next->node_index]) {
+          return_vector_topology.push_back(0);
+          std::vector<int> temp_topology;
+          std::vector<int> temp_order;
+          std::tie (temp_topology, temp_order) = findRFSubtreesRec(tree->next->back, edgeIncidentPresent2, tasks);
+          return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
+          return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
+          return_vector_topology.push_back(1);
+    } else {
+          return_vector_order.push_back((intptr_t) tree->next->back->data);
+          tasks.push(tree->next->back);
+    }
+    //std::cout << "2. Inner node: " << tree->next->next->node_index <<
+      // "\t    Edge incident present: " << edgeIncidentPresent2[tree->next->next->node_index] << "\n";
+    if(edgeIncidentPresent2[tree->next->next->node_index]) {
+          return_vector_topology.push_back(0);
+          std::vector<int> temp_topology;
+          std::vector<int> temp_order;
+          std::tie (temp_topology, temp_order) = findRFSubtreesRec(tree->next->next->back, edgeIncidentPresent2, tasks);
+          return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
+          return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
+          return_vector_topology.push_back(1);
+    } else {
+          return_vector_order.push_back((intptr_t) tree->next->next->back->data);
+          tasks.push(tree->next->next->back);
+    }
+  }
+  return std::make_tuple(return_vector_topology, return_vector_order);
+}
+
+std::tuple<std::vector<int>, std::vector<int>> findRFSubtrees(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
+  std::vector<int> return_topology;
+  std::vector<int> return_order;
+  if(tasks.empty()) {
+    return std::make_tuple(return_topology, return_order);
+  }
+  pll_unode_t * tree = tasks.front();
+  tasks.pop();
+
+  if(tree == NULL) {
+    return std::make_tuple(return_topology, return_order);
+  } else {
+      return findRFSubtreesRec(tree, edgeIncidentPresent2, tasks);
+  }
 }
 
 
@@ -259,8 +259,8 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   sort(edges_to_contract.begin(), edges_to_contract.end());
   std::cout << "Edges to contract in tree 1: " << edges_to_contract << "\n";
   std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(edges_to_contract) << " bytes\n";
-  //sdsl::util::bit_compress(succinct_structure);
-  //std::cout << "\tcompressed size: " << sdsl::size_in_bytes(succinct_structure) << " bytes\n";
+  sdsl::util::bit_compress(edges_to_contract);
+  std::cout << "\tcompressed size: " << sdsl::size_in_bytes(edges_to_contract) << " bytes\n";
   printf("\n\n");
 
   // create a mapping from node_ids in tree1 to branch numbers
@@ -312,7 +312,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   while(!tasks.empty()) {
       std::vector<int> subtree;
       std::vector<int> leaf_order;
-      std::tie(subtree, leaf_order) = traverseTree(tasks, edgeIncidentPresent2);
+      std::tie(subtree, leaf_order) = findRFSubtrees(tasks, edgeIncidentPresent2);
       if(!subtree.empty()) {
           subtrees.push_back(subtree);
           permutations.push_back(leaf_order);
