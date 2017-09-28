@@ -83,6 +83,8 @@ void simple_compression(char * tree_file) {
   pll_unode_t * root = searchRoot(tree);
   // set the tree
   setTree(root);
+  orderTree(root);
+
   // create a mapping from node_ids in tree to branch numbers
   sdsl::bit_vector succinct_structure(4 * tip_count - 2, 0);
   sdsl::int_vector<> node_permutation(tip_count, 0, 32);
@@ -136,6 +138,8 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   // order both trees
   setTree(root1);
   setTree(root2);
+  orderTree(root1);
+  orderTree(root2);
 
   // create a mapping from node_ids in tree1 to branch numbers
   sdsl::bit_vector succinct_structure1(4 * tip_count - 2, 0);

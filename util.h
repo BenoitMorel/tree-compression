@@ -34,7 +34,7 @@ void setTree(pll_unode_t * tree);
  *
  *  Precondition: setTree must have been called on the tree!
  */
-void orderTree(pll_unode_t * tree);
+ void orderTree(pll_unode_t * tree);
 
 /*
  * Traverses the given tree ordered. setTree had to be called before.
