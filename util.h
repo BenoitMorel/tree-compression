@@ -10,7 +10,7 @@ void printNode(pll_unode_t * node);
 
 /*
  * Searches the root (the node with the label "1") in the given tree
- * and return a pointer to the root node.
+ * and returns a pointer to the root node.
  */
 pll_unode_t * searchRoot(pll_utree_t * tree);
 

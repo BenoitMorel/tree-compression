@@ -41,17 +41,11 @@ void printTreeRec(pll_unode_t * tree) {
 }
 
 void printTree(pll_unode_t * tree) {
-  if(tree == NULL) {
-    return;
-  } else {
-    if(tree->next == NULL && tree->back != NULL) {
-      // leaf is given as the root
-      printNode(tree);
-      printTreeRec(tree->back);
-    } else {
-      printTreeRec(tree);
-    }
-  }
+  assert(tree->back != NULL);
+
+  printNode(tree);
+  printTreeRec(tree->back);
+
 }
 
 int setTreeRec(pll_unode_t * tree) {
@@ -83,6 +77,37 @@ void setTree(pll_unode_t * tree) {
   setTreeRec(tree->back);
   //printf("\n\nSmallest: %i\n\n", setTreeRec(tree->back));
 
+}
+
+void orderTreeRec(pll_unode_t * tree) {
+  assert(tree != NULL);
+  if(tree->next != NULL) {
+    // inner node
+    assert(tree->next != NULL);
+    assert(tree->next->next->next == tree); // tree is binary
+
+    if(((intptr_t) tree->next->data) > ((intptr_t) tree->next->next->data)) {
+        // swap tree->next and tree->next->next
+        pll_unode_t * temp = tree->next->next;
+        tree->next->next = tree;
+        temp->next = tree->next;
+        tree->next = temp;
+    }
+  }
+}
+
+/*
+ *  Takes a binary tree represented by its smallest leaf and orderes
+ *  the tree such that when using depth-first search, always the sub-
+ *  tree containing the smallest leaf label is visited first.
+ *
+ *  Precondition: setTree must have been called on the tree!
+ */
+void orderTree(pll_unode_t * tree) {
+  assert(tree->next == NULL);
+  assert(atoi(tree->label) == 1);
+
+  orderTreeRec(tree->back);
 }
 
 bool innerNodeCompare(pll_unode_t * node1, pll_unode_t * node2) {
