@@ -24,7 +24,6 @@ void printTreeRec(pll_unode_t * tree) {
   assert(tree != NULL);
   if(tree->next == NULL) {
     // leaf
-    printf("Node: ");
     printNode(tree);
   } else {
     // inner node
@@ -93,6 +92,9 @@ void orderTreeRec(pll_unode_t * tree) {
         temp->next = tree->next;
         tree->next = temp;
     }
+
+    orderTreeRec(tree->next->back);
+    orderTreeRec(tree->next->next->back);
   }
 }
 

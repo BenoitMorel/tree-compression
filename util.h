@@ -28,6 +28,15 @@ void printTree(pll_unode_t * tree);
 void setTree(pll_unode_t * tree);
 
 /*
+ *  Takes a binary tree represented by its smallest leaf and orderes
+ *  the tree such that when using depth-first search, always the sub-
+ *  tree containing the smallest leaf label is visited first.
+ *
+ *  Precondition: setTree must have been called on the tree!
+ */
+void orderTree(pll_unode_t * tree);
+
+/*
  * Traverses the given tree ordered. setTree had to be called before.
  * Fill an array that maps node_id's to branch numbers (according to later
  * position in the succinct balanced parantheses representation)
