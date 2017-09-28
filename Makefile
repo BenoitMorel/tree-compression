@@ -33,7 +33,7 @@ CFLAGS = -g -O3 -Wall -Wsign-compare $(PROFILING) $(WARN)
 CPPFLAGS = -std=c++11
 LDFLAGS = -lpll_tree -lpll -lm -lsdsl -ldivsufsort -ldivsufsort64 -lstdc++
 
-OBJS = main.o modified_library_functions.o util.o compress_functions.o
+OBJS = main.o modified_library_functions.o util.o compress_functions.o uncompress_functions.o
 PROG = main
 
 default: all
