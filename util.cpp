@@ -136,9 +136,7 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
     //printNode(tree);
   } else {
     // inner node
-    assert(tree->next != NULL);
-    assert(tree->next->next != NULL);
-    assert(tree->next->next->next == tree); // tree has to be binary
+  
 
     // assign inner nodes to an array
     std::vector<pll_unode_t*> inner_nodes;
