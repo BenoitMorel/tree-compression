@@ -1,5 +1,6 @@
 #include <assert.h>
 #include <stdarg.h>
+#include <limits.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -18,6 +19,12 @@ extern "C" {
 #include <algorithm>
 
 #include "util.h"
+
+
+
+#include "uncompress_functions.h"
+
+
 
 void simple_compression(char * tree_file);
 

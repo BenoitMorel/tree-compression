@@ -1,7 +1,7 @@
 #include "compress_functions.h"
 
 /* set to 1 for printing splits */
-#define PRINT_SPLITS 1
+#define PRINT_SPLITS 0
 
 /* static functions */
 static void fatal (const char * format, ...);
@@ -42,9 +42,13 @@ void simple_compression(char * tree_file) {
   for(auto x: branch_lengths) {
     std::cout << x << " ";
   }
-  std::cout << "\n\n";
-}
 
+  std::cout << "\n\nSimple compression compressed size (without branches): " << sdsl::size_in_bytes(succinct_structure)
+            << " (topology) + " << sdsl::size_in_bytes(node_permutation) << " (leaves) = "
+            << sdsl::size_in_bytes(succinct_structure) + sdsl::size_in_bytes(node_permutation)
+            << " bytes\n";
+  std::cout << "---------------------------------------------------------\n";
+}
 std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
   assert(tree != NULL);
   std::vector<int> return_vector_topology;
@@ -320,20 +324,84 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   }
 
   std::cout << "\nSubtrees: \n";
+  int subtree_elements = subtrees.size() - 1;
   for (std::vector<int> i: subtrees) {
+    subtree_elements += i.size();
      for (auto j : i) {
          std::cout << j;
      }
-     std::cout << " ";
-  }
-
-  std::cout << "\nPermutations: \n";
-  for (std::vector<int> i: permutations) {
-     for (auto j : i) {
-         std::cout << j << ",";
-     }
      std::cout << "\n";
   }
+
+  size_t subtrees_index = 0;
+  sdsl::bit_vector subtrees_succinct(subtree_elements, 1);
+  for (std::vector<int> i: subtrees) {
+     for (auto j : i) {
+         subtrees_succinct[subtrees_index] = j;
+         subtrees_index++;
+     }
+     subtrees_index++;
+  }
+  assert(subtrees_index = subtrees_succinct.size());
+
+  std::cout << "\nSuccinct subtree representation: " << subtrees_succinct << "\n";
+  std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(subtrees_succinct) << " bytes\n";
+  sdsl::util::bit_compress(subtrees_succinct);
+  std::cout << "\tcompressed size: " << sdsl::size_in_bytes(subtrees_succinct) << " bytes\n";
+
+  std::cout << "\nPermutations: \n";
+  for(std::vector<int> i: permutations) {
+    for (auto j : i) {
+      std::cout << j << " ";
+    }
+    std::cout << "\n";
+  }
+
+
+  // map permutations to 1,2,3,4,...
+  int permutation_elements = permutations.size() - 1;
+  for (std::vector<int> &perm: permutations) {
+     permutation_elements += perm.size();
+
+     int temp_index, temp_min;
+     int current_set_min = 0;
+     while (current_set_min < perm.size()) {
+       int temp_index = -1;
+       int temp_min = INT_MAX;
+       for (size_t j = 0; j < perm.size(); j++) {
+         if(perm[j] < temp_min && perm[j] > current_set_min) {
+           temp_min = perm[j];
+           temp_index = j;
+         }
+       }
+       current_set_min++;
+       perm[temp_index] = current_set_min;
+     }
+
+  }
+
+  size_t permutation_index = 0;
+  sdsl::int_vector<> succinct_permutations(permutation_elements, 0);
+  for (std::vector<int> i: permutations) {
+     for (auto j : i) {
+         succinct_permutations[permutation_index] = j;
+         permutation_index++;
+     }
+     permutation_index++;
+  }
+  assert(permutation_index = succinct_permutations.size());
+
+  std::cout << "\nSuccinct permutation representation: " << succinct_permutations << "\n";
+  std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(succinct_permutations) << " bytes\n";
+  sdsl::util::bit_compress(succinct_permutations);
+  std::cout << "\tcompressed size: " << sdsl::size_in_bytes(succinct_permutations) << " bytes\n";
+
+  std::cout << "\n\nRF compression compressed size (without branches): " << sdsl::size_in_bytes(edges_to_contract)
+            << " (edges to contract) + " << sdsl::size_in_bytes(subtrees_succinct) << " (subtrees) + "
+            << sdsl::size_in_bytes(succinct_permutations) << " (permutations) = "
+            << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct) + sdsl::size_in_bytes(succinct_permutations)
+            << " bytes\n";
+  std::cout << "---------------------------------------------------------\n";
 
   //printf("RF [manual]\n");
   //printf("distance = %d\n", rf_dist);
