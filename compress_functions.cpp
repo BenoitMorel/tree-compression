@@ -48,6 +48,8 @@ void simple_compression(char * tree_file) {
             << sdsl::size_in_bytes(succinct_structure) + sdsl::size_in_bytes(node_permutation)
             << " bytes\n";
   std::cout << "---------------------------------------------------------\n";
+
+  free(node_id_to_branch_id);
 }
 std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
   assert(tree != NULL);
@@ -419,6 +421,8 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   pll_utree_destroy (tree2, NULL);
 
   free(node_id_to_branch_id1);
+  free(node_id_to_branch_id2);
+  free(consensus_node_id_to_branch_id1);
   free(s1_present);
   free(s2_present);
 
