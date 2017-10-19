@@ -24,8 +24,18 @@ extern "C" {
 
 #include "uncompress_functions.h"
 
-
-
+/**
+ * Takes a tree file and computes a simple compression of the tree.
+ *
+ * @param tree_file the tree file
+ */
 void simple_compression(char * tree_file);
 
+/**
+ * Takes two tree files and computes a compression between the two
+ * trees using the rf distance.
+ *
+ * @param tree1_file first tree
+ * @param tree2_file second tree
+ */
 void rf_distance_compression(char * tree1_file, char * tree2_file);

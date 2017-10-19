@@ -51,6 +51,7 @@ void simple_compression(char * tree_file) {
 
   free(node_id_to_branch_id);
 }
+
 std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::queue<pll_unode_t *> &tasks) {
   assert(tree != NULL);
   std::vector<int> return_vector_topology;
@@ -236,9 +237,6 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   // fill the arrays s1_present and s2_present
   int rf_distance = pllmod_utree_split_rf_distance_extended(splits1, splits2, s1_present, s2_present, tip_count);
   std::cout << "RF-distance: " << rf_distance << "\n";
-
-  // determine number of branches with the same length
-  unsigned int same_branchs = same_branch_lengths(splits1, splits2, splits_to_node1, splits_to_node2, tip_count);
 
   assert(rf_distance % 2 == 0);
   sdsl::int_vector<> edges_to_contract(rf_distance / 2, 0);
