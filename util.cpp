@@ -136,7 +136,7 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
     //printNode(tree);
   } else {
     // inner node
-  
+
 
     // assign inner nodes to an array
     std::vector<pll_unode_t*> inner_nodes;
@@ -249,4 +249,22 @@ void contractEdge(pll_unode_t * node) {
   pll_unode_t * node_successor = node->next;
   node_predecessor->next = node_back_successor;
   node_back_predecessor->next = node_successor;
+}
+
+bool saveArray( const double* pdata, size_t length, const std::string& file_path ) {
+    std::ofstream os(file_path.c_str(), std::ios::binary | std::ios::out);
+    if ( !os.is_open() )
+        return false;
+    os.write(reinterpret_cast<const char*>(pdata), std::streamsize(length*sizeof(double)));
+    os.close();
+    return true;
+}
+
+bool loadArray( double* pdata, size_t length, const std::string& file_path) {
+    std::ifstream is(file_path.c_str(), std::ios::binary | std::ios::in);
+    if ( !is.is_open() )
+        return false;
+    is.read(reinterpret_cast<char*>(pdata), std::streamsize(length*sizeof(double)));
+    is.close();
+    return true;
 }

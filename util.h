@@ -1,5 +1,7 @@
 #include <libpll/pll_tree.h>
 #include <sdsl/bit_vectors.hpp>
+#include <iostream>
+#include <fstream>
 
 #include <assert.h>
 
@@ -47,3 +49,22 @@ void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vec
  * Contracts the edge between node and node->back.
  */
 void contractEdge(pll_unode_t * node);
+
+/**
+ * Stores a given array of doubles to a file.
+ *
+ * @param  pdata     the array of doubles
+ * @param  length    length of the array
+ * @param  file_path file to store the array in
+ * @return           true in case of success, false otherwise
+ */
+bool saveArray( const double* pdata, size_t length, const std::string& file_path);
+
+/**
+ * Loads an array of doubles from file
+ * @param  pdata     array to store the doubles in
+ * @param  length    length of the array
+ * @param  file_path file to read the doubles from
+ * @return           true in case of success, false otherwise
+ */
+bool loadArray( double* pdata, size_t length, const std::string& file_path);
