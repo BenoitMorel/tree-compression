@@ -26,6 +26,14 @@ unsigned int pllmod_utree_split_rf_distance_extended(pll_split_t * s1,
                                                        int * s2_present,
                                                        unsigned int tip_count);
 
+unsigned int pllmod_utree_split_rf_distance_extended_with_branches(pll_split_t * s1,
+                                                       pll_split_t * s2,
+                                                       pll_unode_t ** splits_to_node1,
+                                                       pll_unode_t ** splits_to_node2,
+                                                       int * s1_present,
+                                                       int * s2_present,
+                                                       unsigned int tip_count);
+
 // original method: pllmod_utree_rf_distance(pll_unode_t * t1,
 //                                                 pll_unode_t * t2,
 //                                                 unsigned int tip_count)
