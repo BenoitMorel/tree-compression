@@ -3,7 +3,7 @@
 /* set to 1 for printing splits */
 #define PRINT_SPLITS 0
 
-#define PRINT_COMPRESSION 0
+#define PRINT_COMPRESSION 1
 
 /* static functions */
 static void fatal (const char * format, ...);
@@ -23,7 +23,7 @@ void simple_compression(char * tree_file) {
   setTree(root);
   orderTree(root);
 
-  // std::cout << "Bit array size: " << 4 * tip_count - 2 << "\n";
+   std::cout << "Bit array size: " << 4 * tip_count - 2 << "\n";
 
   // create a mapping from node_ids in tree to branch numbers
   sdsl::bit_vector succinct_structure(4 * tip_count - 2, 0);
@@ -50,6 +50,11 @@ void simple_compression(char * tree_file) {
     }
   }
   #endif
+
+  // write stuctures to file
+  store_to_file(succinct_structure, "output_files/succinct_tree.sdsl");
+  store_to_file(node_permutation, "output_files/node_permutation.sdsl");
+  saveArray(&branch_lengths[0], branch_lengths.size(), "output_files/branch_lengths.txt");
 
   std::cout << "\n\nSimple compression compressed size (without branches): " << sdsl::size_in_bytes(succinct_structure)
             << " (topology) + " << sdsl::size_in_bytes(node_permutation) << " (leaves) = "
@@ -132,6 +137,17 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtrees(std::queue<pll_uno
   }
 }
 
+void free_leaf(pll_unode_t * leaf) {
+    if (leaf->label)
+      free(leaf->label);
+    free(leaf);
+}
+
+void free_inner_node(pll_unode_t * node) {
+  if (node->label)
+    free(node->label);
+  free(node);
+}
 
 void rf_distance_compression(char * tree1_file, char * tree2_file) {
   /* tree properties */
@@ -152,7 +168,6 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
 
   if (!pllmod_utree_consistency_check(tree1, tree2))
     fatal("Tip node IDs are not consistent!");
-
 
   // search for the root of the trees
   pll_unode_t * root1 = searchRoot(tree1);
@@ -454,6 +469,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
     << sdsl::size_in_bytes(succinct_permutations) << " (permutations) + " << branch_lengths1.size() * 8 << " (branches) = "
     << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct) + sdsl::size_in_bytes(succinct_permutations) + branch_lengths1.size() * 8
     << " bytes\n";
+
     std::cout << "---------------------------------------------------------\n";
   }
 
@@ -465,372 +481,26 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
 
   //printf("Amount of branchs with same lengths = %d\n", same_branchs);
 
-  //pllmod_utree_split_destroy(splits1);
-  //pllmod_utree_split_destroy(splits2);
-  //free(splits_to_node1);
-  //free(splits_to_node2);
+  pllmod_utree_split_destroy(splits1);
+  pllmod_utree_split_destroy(splits2);
+  free(splits_to_node1);
+  free(splits_to_node2);
 
   /* clean */
-  //pll_utree_destroy (tree1, NULL);
-  //pll_utree_destroy (tree2, NULL);
+  //pll_utree_destroy_consensus (tree1);
 
-  //free(node_id_to_branch_id1);
-  //free(node_id_to_branch_id2);
-  //free(consensus_node_id_to_branch_id1);
-  //free(s1_present);
-  //free(s2_present);
+  traverseTree(root1, free_leaf, free_inner_node);
+  free(tree1->nodes);
+  free(tree1);
+  pll_utree_destroy (tree2, NULL);
 
-}
-
-void rf_distance_compression_with_branches(char * tree1_file, char * tree2_file) {
-  /* tree properties */
-  pll_utree_t * tree1 = NULL,
-              * tree2 = NULL;
-  unsigned int tip_count;
-
-  /* parse the input trees */
-  tree1 = pll_utree_parse_newick (tree1_file);
-  tree2 = pll_utree_parse_newick (tree2_file);
-  tip_count = tree1->tip_count;
-
-  if (tip_count != tree2->tip_count)
-    fatal("Trees have different number of tips!");
-
-  if (!pllmod_utree_consistency_set(tree1, tree2))
-    fatal("Cannot set trees consistent!");
-
-  if (!pllmod_utree_consistency_check(tree1, tree2))
-    fatal("Tip node IDs are not consistent!");
-
-
-  // search for the root of the trees
-  pll_unode_t * root1 = searchRoot(tree1);
-  pll_unode_t * root2 = searchRoot(tree2);
-
-  // order both trees
-  setTree(root1);
-  setTree(root2);
-  orderTree(root1);
-  orderTree(root2);
-
-  // create a mapping from node_ids in tree1 to branch numbers
-  sdsl::bit_vector succinct_structure1(4 * tip_count - 2, 0);
-  size_t zeros = sdsl::rank_support_v<0>(&succinct_structure1)(succinct_structure1.size());
-  sdsl::bit_vector::select_0_type b_sel(&succinct_structure1);
-  //for (size_t i=1; i <= 2 * tip_count - 1; ++i)
-  // std::cout << i << ": " << b_sel(i) << "\n";
-
-  sdsl::int_vector<> node_permutation1(tip_count, 0, 32);
-  std::vector<double> branch_lengths1(2 * tip_count - 2);
-  unsigned int* node_id_to_branch_id1 = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
-  assignBranchNumbers(root1, succinct_structure1, node_permutation1, branch_lengths1, node_id_to_branch_id1);
-
-  sdsl::bit_vector succinct_structure2(4 * tip_count - 2, 0);
-  sdsl::int_vector<> node_permutation2(tip_count, 0, 32);
-  std::vector<double> branch_lengths2(2 * tip_count - 2);
-  unsigned int* node_id_to_branch_id2 = (unsigned int*) malloc ((tree2->inner_count * 3 + tree2->tip_count) * sizeof(unsigned int));
-  assignBranchNumbers(root2, succinct_structure2, node_permutation2, branch_lengths2, node_id_to_branch_id2);
-
-  #if(PRINT_COMPRESSION)
-  {
-    std::cout << "Succinct representation tree 1: " << succinct_structure1 << "\n";
-    std::cout << "Succinct representation tree 2: " << succinct_structure2 << "\n";
-  }
-  #endif
-  //std::cout << "Node permutation tree 1: " << node_permutation1 << "\n";
-  /*std::cout << "Branch Lengths tree 1: ";
-  for(auto x: branch_lengths1) {
-    std::cout << x << " ";
-  }
-  std::cout << "\n";*/
-
-  /*for (size_t i = 0; i < (tree1->inner_count * 3 + tree1->tip_count); i++) {
-      printf("Index: %i, Edge: %u\n", i, node_id_to_branch_id[i]);
-  }*/
-
-
-  /* uncomment lines below for displaying the trees in ASCII format */
-  // pll_utree_show_ascii(tree1, PLL_UTREE_SHOW_LABEL | PLL_UTREE_SHOW_PMATRIX_INDEX);
-  // pll_utree_show_ascii(tree2, PLL_UTREE_SHOW_LABEL | PLL_UTREE_SHOW_PMATRIX_INDEX);
-
-  /* next, we compute the RF distance in 2 different ways: */
-
-  /* 1. creating the split sets manually */
-  unsigned int n_splits = tip_count - 3;
-  pll_unode_t ** splits_to_node1 = (pll_unode_t **) malloc(n_splits * sizeof(pll_unode_t *));
-  pll_split_t * splits1 = pllmod_utree_split_create(tree1->nodes[tip_count],
-                                                    tip_count,
-                                                    splits_to_node1);
-
-#if(PRINT_SPLITS)
-  {
-    unsigned int i;
-    for (i=0; i<n_splits; ++i)
-    {
-      pllmod_utree_split_show(splits1[i], tip_count);
-      printf("\n");
-    }
-    printf("\n");
-  }
-#endif
-
-  /* now we compute the splits, but also the nodes corresponding to each split */
-  pll_unode_t ** splits_to_node2 = (pll_unode_t **) malloc(n_splits * sizeof(pll_unode_t *));
-  pll_split_t * splits2 = pllmod_utree_split_create(tree2->nodes[tip_count],
-                                                    tip_count,
-                                                    splits_to_node2);
-
-
-#if(PRINT_SPLITS)
-  {
-    unsigned int i;
-    for (i=0; i<n_splits; ++i)
-    {
-      pllmod_utree_split_show(splits2[i], tip_count);
-      printf(" node: Pmatrix:%d Nodes:%d<->%d Length:%lf\n",
-                                splits_to_node2[i]->pmatrix_index,
-                                splits_to_node2[i]->node_index,
-                                splits_to_node2[i]->back->node_index,
-                                splits_to_node2[i]->length);
-    }
-  }
-#endif
-
-  // create arrays indicating whether a split is common in both trees or not
-  int * s1_present = (int*) calloc(n_splits, sizeof(int));
-  int * s2_present = (int*) calloc(n_splits, sizeof(int));
-
-  // fill the arrays s1_present and s2_present
-  int rf_distance = pllmod_utree_split_rf_distance_extended_with_branches(splits1, splits2, splits_to_node1, splits_to_node2, s1_present, s2_present, tip_count);
-  #if(PRINT_COMPRESSION)
-  {
-    std::cout << "RF-distance: " << rf_distance << "\n";
-  }
-  #endif
-
-  assert(rf_distance % 2 == 0);
-  sdsl::int_vector<> edges_to_contract(rf_distance / 2, 0);
-  size_t idx = 0;
-
-  /*std::cout << "\ns1_present\n";
-  for (size_t i = 0; i < n_splits; i++) {
-      std::cout << i << ":\t" << s1_present[i] << "\t" << node_id_to_branch_id1[splits_to_node1[i]->node_index] << "\n";
-  }
-  std::cout << "\ns2_present\n";
-  for (size_t i = 0; i < n_splits; i++) {
-      std::cout << i << ":\t" << s2_present[i] << "\t" << node_id_to_branch_id2[splits_to_node2[i]->node_index] << "\n";
-  }*/
-
-
-  for (size_t i = 0; i < n_splits; i++) {
-      if(s1_present[i] == 0) {
-          contractEdge(splits_to_node1[i]);
-          edges_to_contract[idx] = node_id_to_branch_id1[splits_to_node1[i]->node_index];
-          idx++;
-      }
-  }
-
-  sort(edges_to_contract.begin(), edges_to_contract.end());
-  #if(PRINT_COMPRESSION)
-  {
-    std::cout << "Edges to contract in tree 1: " << edges_to_contract << "\n";
-    std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(edges_to_contract) << " bytes\n";
-    sdsl::util::bit_compress(edges_to_contract);
-    std::cout << "\tcompressed size: " << sdsl::size_in_bytes(edges_to_contract) << " bytes\n";
-    printf("\n\n");
-  }
-  #endif
-
-  // create a mapping from node_ids in tree1 to branch numbers
-  sdsl::bit_vector consensus_succinct_structure1(4 * tip_count - rf_distance - 2, 0);
-  size_t consensus_zeros = sdsl::rank_support_v<0>(&consensus_succinct_structure1)(consensus_succinct_structure1.size());
-  sdsl::bit_vector::select_0_type consensus_b_sel(&consensus_succinct_structure1);
-  //for (size_t i=1; i <= 2 * tip_count - 1; ++i)
-  // std::cout << i << ": " << b_sel(i) << "\n";
-
-  sdsl::int_vector<> consensus_node_permutation1(tip_count, 0, 32);
-  std::vector<double> consensus_branch_lengths1(2 * tip_count - 2 - (rf_distance / 2));
-  unsigned int* consensus_node_id_to_branch_id1 = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
-  assignBranchNumbers(root1, consensus_succinct_structure1, consensus_node_permutation1, consensus_branch_lengths1, consensus_node_id_to_branch_id1);
-
-  #if(PRINT_COMPRESSION)
-  {
-    std::cout << "Consensus tree after edge contraction: " << consensus_succinct_structure1 << "\n";
-  }
-  #endif
-
-  // create an array that indicates whether the edge incident to the node_id in tree 2 is common
-  // in both trees or not
-  std::vector<bool> edgeIncidentPresent2 (tree2->inner_count * 3 + tree2->tip_count);
-  for (unsigned int i=0; i<n_splits; ++i)
-  {
-
-    if(s2_present[i] == 0) {
-      // edge is not common in both trees
-      edgeIncidentPresent2[splits_to_node2[i]->node_index] = true;
-      edgeIncidentPresent2[splits_to_node2[i]->back->node_index] = true;
-    } else {
-      // edge is common in both trees
-      edgeIncidentPresent2[splits_to_node2[i]->node_index] = false;
-      edgeIncidentPresent2[splits_to_node2[i]->back->node_index] = false;
-    }
-  }
-
-  /*std::cout << "edgeIncidentPresent2:\n";
-  for(int i = 0; i < edgeIncidentPresent2.size(); i++) {
-    std::cout << i << ": " << edgeIncidentPresent2[i] << "\n";
-  }*/
-
-  std::queue<pll_unode_t *> tasks;
-  tasks.push(root2->back);
-
-  std::vector<std::vector<int>> subtrees;
-  std::vector<std::vector<int>> permutations;
-
-  //printTree(root2);
-  while(!tasks.empty()) {
-      std::vector<int> subtree;
-      std::vector<int> leaf_order;
-      std::tie(subtree, leaf_order) = findRFSubtrees(tasks, edgeIncidentPresent2);
-      if(!subtree.empty()) {
-          subtrees.push_back(subtree);
-          permutations.push_back(leaf_order);
-      }
-  }
-
-  if(!subtrees.empty()) {
-    #if(PRINT_COMPRESSION)
-    {
-      std::cout << "\nSubtrees: \n";
-    }
-    #endif
-    int subtree_elements = subtrees.size() - 1;
-    for (std::vector<int> i: subtrees) {
-      subtree_elements += i.size();
-      #if(PRINT_COMPRESSION)
-      {
-        for (auto j : i) {
-          std::cout << j;
-        }
-        std::cout << "\n";
-      }
-      #endif
-    }
-
-    size_t subtrees_index = 0;
-    sdsl::bit_vector subtrees_succinct(subtree_elements, 1);
-    for (std::vector<int> i: subtrees) {
-      for (auto j : i) {
-        subtrees_succinct[subtrees_index] = j;
-        subtrees_index++;
-      }
-      subtrees_index++;
-    }
-    assert(subtrees_index = subtrees_succinct.size());
-
-    #if(PRINT_COMPRESSION)
-    {
-      std::cout << "\nSuccinct subtree representation: " << subtrees_succinct << "\n";
-      std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(subtrees_succinct) << " bytes\n";
-      sdsl::util::bit_compress(subtrees_succinct);
-      std::cout << "\tcompressed size: " << sdsl::size_in_bytes(subtrees_succinct) << " bytes\n";
-
-      std::cout << "\nPermutations: \n";
-      for(std::vector<int> i: permutations) {
-        for (auto j : i) {
-          std::cout << j << " ";
-        }
-        std::cout << "\n";
-      }
-    }
-    #endif
-
-
-    // map permutations to 1,2,3,4,...
-    int permutation_elements = permutations.size() - 1;
-    for (std::vector<int> &perm: permutations) {
-      permutation_elements += perm.size();
-
-      int temp_index, temp_min;
-      int current_set_min = 0;
-      while (current_set_min < perm.size()) {
-        int temp_index = -1;
-        int temp_min = INT_MAX;
-        for (size_t j = 0; j < perm.size(); j++) {
-          if(perm[j] < temp_min && perm[j] > current_set_min) {
-            temp_min = perm[j];
-            temp_index = j;
-          }
-        }
-        current_set_min++;
-        perm[temp_index] = current_set_min;
-      }
-
-    }
-
-    size_t permutation_index = 0;
-    sdsl::int_vector<> succinct_permutations(permutation_elements, 0);
-    for (std::vector<int> i: permutations) {
-      for (auto j : i) {
-        succinct_permutations[permutation_index] = j;
-        permutation_index++;
-      }
-      permutation_index++;
-    }
-    assert(permutation_index = succinct_permutations.size());
-
-    #if(PRINT_COMPRESSION)
-    {
-      std::cout << "\nSuccinct permutation representation: " << succinct_permutations << "\n";
-      std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(succinct_permutations) << " bytes\n";
-      sdsl::util::bit_compress(succinct_permutations);
-      std::cout << "\tcompressed size: " << sdsl::size_in_bytes(succinct_permutations) << " bytes\n";
-    }
-    #endif
-
-    std::cout << "\n\nRF compression compressed size (without branches): " << sdsl::size_in_bytes(edges_to_contract)
-    << " (edges to contract) + " << sdsl::size_in_bytes(subtrees_succinct) << " (subtrees) + "
-    << sdsl::size_in_bytes(succinct_permutations) << " (permutations) = "
-    << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct) + sdsl::size_in_bytes(succinct_permutations)
-    << " bytes\n";
-
-    std::cout << "#edges to contract: " << edges_to_contract.size() << " --> " << edges_to_contract.size()
-    << " * 8 = " << edges_to_contract.size() * 8 << " bytes" << "\n";
-
-    std::cout << "\n\nRF compression compressed size (with branches): " << sdsl::size_in_bytes(edges_to_contract)
-    << " (edges to contract) + " << sdsl::size_in_bytes(subtrees_succinct) << " (subtrees) + "
-    << sdsl::size_in_bytes(succinct_permutations) << " (permutations) + " << edges_to_contract.size() * 8
-    << " (branch lengths) = " << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct)
-    + sdsl::size_in_bytes(succinct_permutations) + edges_to_contract.size() * 8 << " bytes\n";
-    std::cout << "---------------------------------------------------------\n";
-
-  }
-
-  // TODO: free procs segmentation fault
-
-  //printf("RF [manual]\n");
-  //printf("distance = %d\n", rf_dist);
-  //printf("relative = %.2f%%\n", 100.0*rf_dist/(2*(tip_count-3)));
-
-  //printf("Amount of branchs with same lengths = %d\n", same_branchs);
-
-  //pllmod_utree_split_destroy(splits1);
-  //pllmod_utree_split_destroy(splits2);
-  //free(splits_to_node1);
-  //free(splits_to_node2);
-
-  /* clean */
-  //pll_utree_destroy (tree1, NULL);
-  //pll_utree_destroy (tree2, NULL);
-
-  //free(node_id_to_branch_id1);
-  //free(node_id_to_branch_id2);
-  //free(consensus_node_id_to_branch_id1);
-  //free(s1_present);
-  //free(s2_present);
+  free(node_id_to_branch_id1);
+  free(node_id_to_branch_id2);
+  free(consensus_node_id_to_branch_id1);
+  free(s1_present);
+  free(s2_present);
 
 }
-
 
 /******************************************************************************/
 /******************************************************************************/

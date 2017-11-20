@@ -39,12 +39,3 @@ void simple_compression(char * tree_file);
  * @param tree2_file second tree
  */
 void rf_distance_compression(char * tree1_file, char * tree2_file);
-
-/**
- * Takes two tree files and computes a compression between the two
- * trees using the kuhner-felstenstein distance.
- *
- * @param tree1_file first tree
- * @param tree2_file second tree
- */
-void rf_distance_compression_with_branches(char * tree1_file, char * tree2_file);

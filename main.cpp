@@ -43,9 +43,6 @@ int main (int argc, char * argv[])
   rf_distance_compression(argv[1], argv[2]);
   std::cout << "\n";
 
-  std::cout << "RF-compression with branch lengths: \n";
-  rf_distance_compression_with_branches(argv[1], argv[2]);
-  std::cout << "\n";
 }
 
 /******************************************************************************/
