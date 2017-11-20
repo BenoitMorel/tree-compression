@@ -5,7 +5,8 @@
 
 void printNode(pll_unode_t * node) {
   assert(node != NULL);
-  printf("Index: %i\t\tLabel: %s\t\tLength: %f\n", node->node_index, node->label, node->length);
+  printf("Node Index: %i\t\tPMatrix Index: %i\t\tLabel: %s\t\tLength: %f\n",
+          node->node_index, node->pmatrix_index, node->label, node->length);
 }
 
 pll_unode_t * searchRoot(pll_utree_t * tree) {
@@ -247,6 +248,7 @@ void contractEdge(pll_unode_t * node) {
   pll_unode_t * node_back_successor = node->back->next;
   pll_unode_t * node_predecessor = internalPredecessor(node);
   pll_unode_t * node_successor = node->next;
+
   node_predecessor->next = node_back_successor;
   node_back_predecessor->next = node_successor;
 }
@@ -267,4 +269,33 @@ bool loadArray( double* pdata, size_t length, const std::string& file_path) {
     is.read(reinterpret_cast<char*>(pdata), std::streamsize(length*sizeof(double)));
     is.close();
     return true;
+}
+
+void traverseTreeRec(pll_unode_t * tree, void (*leaf_func)(pll_unode_t *),
+            void (*inner_node_func)(pll_unode_t *)) {
+  assert(tree != NULL);
+  assert(leaf_func != NULL);
+  assert(inner_node_func != NULL);
+
+  if(tree->next == NULL) {
+    // leaf
+    leaf_func(tree);
+  } else {
+    // inner node
+    pll_unode_t * current_node = tree->next;
+    while(current_node != tree) {
+      pll_unode_t * temp_node = current_node;
+      traverseTreeRec(current_node->back, leaf_func, inner_node_func);
+      current_node = current_node->next;
+      inner_node_func(temp_node);
+    }
+    inner_node_func(tree);
+  }
+}
+
+void traverseTree(pll_unode_t * root, void (*leaf_func)(pll_unode_t *),
+            void (*inner_node_func)(pll_unode_t *)) {
+  assert(root->back != NULL);
+
+  traverseTreeRec(root->back, leaf_func, inner_node_func);
 }

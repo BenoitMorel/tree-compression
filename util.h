@@ -68,3 +68,17 @@ bool saveArray( const double* pdata, size_t length, const std::string& file_path
  * @return           true in case of success, false otherwise
  */
 bool loadArray( double* pdata, size_t length, const std::string& file_path);
+
+void pll_utree_destroy_consensus(pll_utree_t * tree);
+
+/**
+ * Traverses the given tree (represented by its root) in postorder and applies
+ * the function leaf_func to the leaves and the function inner_node_func to the
+ * inner nodes, after the nodes have been visited.
+ *
+ * @param root            root of the tree
+ * @param leaf_func       function to apply to the leaves
+ * @param inner_node_func function to apply to the inner nodes
+ */
+void traverseTree(pll_unode_t * root, void (*leaf_func)(pll_unode_t *),
+            void (*inner_node_func)(pll_unode_t *));
