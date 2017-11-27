@@ -3,8 +3,10 @@
 /* set to 1 for printing splits */
 #define PRINT_SPLITS 0
 
+#define PRINT_COMPRESSION 0
+
 /* set to 1 for printing created structures */
-#define PRINT_COMPRESSION 1
+#define PRINT_COMPRESSION_STRUCTURES 0
 
 /* static functions */
 static void fatal (const char * format, ...);
@@ -36,7 +38,7 @@ void simple_compression(char * tree_file) {
   // fill the created structures with the given tree
   assignBranchNumbers(root, succinct_structure, node_permutation, branch_lengths, node_id_to_branch_id);
 
-  #if(PRINT_COMPRESSION)
+  #if(PRINT_COMPRESSION_STRUCTURES)
   {
     std::cout << "Succinct representation: " << succinct_structure << "\n";
     std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(succinct_structure) << " bytes\n";
@@ -62,19 +64,23 @@ void simple_compression(char * tree_file) {
   store_to_file(node_permutation, "output_files/node_permutation.sdsl");
   saveArray(&branch_lengths[0], branch_lengths.size(), "output_files/branch_lengths.txt");
 
-  std::cout << "\n\nSimple compression compressed size (without branches): " << sdsl::size_in_bytes(succinct_structure)
-            << " (topology) + " << sdsl::size_in_bytes(node_permutation) << " (leaves) = "
-            << sdsl::size_in_bytes(succinct_structure) + sdsl::size_in_bytes(node_permutation)
-            << " bytes\n";
+  #if(PRINT_COMPRESSION)
+  {
+    std::cout << "\n\nSimple compression compressed size (without branches): " << sdsl::size_in_bytes(succinct_structure)
+              << " (topology) + " << sdsl::size_in_bytes(node_permutation) << " (leaves) = "
+              << sdsl::size_in_bytes(succinct_structure) + sdsl::size_in_bytes(node_permutation)
+              << " bytes\n";
 
-  std::cout << "Branch lengths: " << branch_lengths.size() << " (#branches) * 8 byte = " << branch_lengths.size() * 8 << "\n";
+    std::cout << "Branch lengths: " << branch_lengths.size() << " (#branches) * 8 byte = " << branch_lengths.size() * 8 << "\n";
 
-  std::cout << "Simple compression compressed size (with branches): " << sdsl::size_in_bytes(succinct_structure)
-            << " (topology) + " << sdsl::size_in_bytes(node_permutation) << " (leaves) + " << branch_lengths.size() * 8
-            << " (branches) = " << sdsl::size_in_bytes(succinct_structure) + sdsl::size_in_bytes(node_permutation) + branch_lengths.size() * 8
-            << " bytes\n";
+    std::cout << "Simple compression compressed size (with branches): " << sdsl::size_in_bytes(succinct_structure)
+              << " (topology) + " << sdsl::size_in_bytes(node_permutation) << " (leaves) + " << branch_lengths.size() * 8
+              << " (branches) = " << sdsl::size_in_bytes(succinct_structure) + sdsl::size_in_bytes(node_permutation) + branch_lengths.size() * 8
+              << " bytes\n";
 
-  std::cout << "---------------------------------------------------------\n";
+    std::cout << "---------------------------------------------------------\n";
+  }
+  #endif
 
   free(node_id_to_branch_id);
 }
@@ -203,7 +209,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   unsigned int* node_id_to_branch_id2 = (unsigned int*) malloc ((tree2->inner_count * 3 + tree2->tip_count) * sizeof(unsigned int));
   assignBranchNumbers(root2, succinct_structure2, node_permutation2, branch_lengths2, node_id_to_branch_id2);
 
-  #if(PRINT_COMPRESSION)
+  #if(PRINT_COMPRESSION_STRUCTURES)
   {
     std::cout << "Succinct representation tree 1: " << succinct_structure1 << "\n";
     std::cout << "Succinct representation tree 2: " << succinct_structure2 << "\n";
@@ -258,7 +264,11 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   // fill the arrays s1_present and s2_present
   int rf_distance = pllmod_utree_split_rf_distance_extended(splits1, splits2, s1_present, s2_present, tip_count);
 
-  #if(PRINT_COMPRESSION)
+  // TODO: just for test
+  pllmod_utree_split_rf_distance_extended_with_branches(splits1, splits2, splits_to_node1, splits_to_node2, s1_present, s2_present, tip_count);
+
+
+  #if(PRINT_COMPRESSION_STRUCTURES)
   {
     std::cout << "RF-distance: " << rf_distance << "\n";
   }
@@ -281,7 +291,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   // sort all edges to contract
   sort(edges_to_contract.begin(), edges_to_contract.end());
 
-  #if(PRINT_COMPRESSION)
+  #if(PRINT_COMPRESSION_STRUCTURES)
   {
     std::cout << "Edges to contract in tree 1: " << edges_to_contract << "\n";
     std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(edges_to_contract) << " bytes\n";
@@ -299,7 +309,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   unsigned int* consensus_node_id_to_branch_id = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
   assignBranchNumbers(root1, consensus_succinct_structure, consensus_node_permutation, consensus_branch_lengths, consensus_node_id_to_branch_id);
 
-  #if(PRINT_COMPRESSION)
+  #if(PRINT_COMPRESSION_STRUCTURES)
   {
     std::cout << "Consensus tree after edge contraction: " << consensus_succinct_structure << "\n";
   }
@@ -339,7 +349,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   }
 
   if(!subtrees.empty()) {
-    #if(PRINT_COMPRESSION)
+    #if(PRINT_COMPRESSION_STRUCTURES)
     {
       std::cout << "\nSubtrees: \n";
     }
@@ -347,7 +357,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
     int subtree_elements = subtrees.size() - 1;
     for (std::vector<int> i: subtrees) {
       subtree_elements += i.size();
-      #if(PRINT_COMPRESSION)
+      #if(PRINT_COMPRESSION_STRUCTURES)
       {
         for (auto j : i) {
           std::cout << j;
@@ -369,7 +379,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
     }
     assert(subtrees_index = subtrees_succinct.size());
 
-    #if(PRINT_COMPRESSION)
+    #if(PRINT_COMPRESSION_STRUCTURES)
     {
       std::cout << "\nSuccinct subtree representation: " << subtrees_succinct << "\n";
       std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(subtrees_succinct) << " bytes\n";
@@ -422,7 +432,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
     }
     assert(permutation_index = succinct_permutations.size());
 
-    #if(PRINT_COMPRESSION)
+    #if(PRINT_COMPRESSION_STRUCTURES)
     {
       std::cout << "\nSuccinct permutation representation: " << succinct_permutations << "\n";
       std::cout << "\tuncompressed size: " << sdsl::size_in_bytes(succinct_permutations) << " bytes\n";
@@ -432,21 +442,25 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
     }
     #endif
 
-    std::cout << "\n\nRF compression compressed size (without branches): " << sdsl::size_in_bytes(edges_to_contract)
-    << " (edges to contract) + " << sdsl::size_in_bytes(subtrees_succinct) << " (subtrees) + "
-    << sdsl::size_in_bytes(succinct_permutations) << " (permutations) = "
-    << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct) + sdsl::size_in_bytes(succinct_permutations)
-    << " bytes\n";
+    #if(PRINT_COMPRESSION)
+    {
+      std::cout << "\n\nRF compression compressed size (without branches): " << sdsl::size_in_bytes(edges_to_contract)
+      << " (edges to contract) + " << sdsl::size_in_bytes(subtrees_succinct) << " (subtrees) + "
+      << sdsl::size_in_bytes(succinct_permutations) << " (permutations) = "
+      << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct) + sdsl::size_in_bytes(succinct_permutations)
+      << " bytes\n";
 
-    std::cout << "Branch lengths: " << branch_lengths1.size() << " (#branches) * 8 byte = " << branch_lengths1.size() * 8 << "\n";
+      std::cout << "Branch lengths: " << branch_lengths1.size() << " (#branches) * 8 byte = " << branch_lengths1.size() * 8 << "\n";
 
-    std::cout << "RF compression compressed size (with branches): " << sdsl::size_in_bytes(edges_to_contract)
-    << " (edges to contract) + " << sdsl::size_in_bytes(subtrees_succinct) << " (subtrees) + "
-    << sdsl::size_in_bytes(succinct_permutations) << " (permutations) + " << branch_lengths1.size() * 8 << " (branches) = "
-    << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct) + sdsl::size_in_bytes(succinct_permutations) + branch_lengths1.size() * 8
-    << " bytes\n";
+      std::cout << "RF compression compressed size (with branches): " << sdsl::size_in_bytes(edges_to_contract)
+      << " (edges to contract) + " << sdsl::size_in_bytes(subtrees_succinct) << " (subtrees) + "
+      << sdsl::size_in_bytes(succinct_permutations) << " (permutations) + " << branch_lengths1.size() * 8 << " (branches) = "
+      << sdsl::size_in_bytes(edges_to_contract) + sdsl::size_in_bytes(subtrees_succinct) + sdsl::size_in_bytes(succinct_permutations) + branch_lengths1.size() * 8
+      << " bytes\n";
 
-    std::cout << "---------------------------------------------------------\n";
+      std::cout << "---------------------------------------------------------\n";
+    }
+    #endif
   }
 
   // TODO: free procs segmentation fault
