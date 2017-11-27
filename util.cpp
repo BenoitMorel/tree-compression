@@ -29,14 +29,15 @@ void printTreeRec(pll_unode_t * tree) {
   } else {
     // inner node
     assert(tree->next != NULL);
-    assert(tree->next->next != NULL);
-    assert(tree->next->back != NULL);
-    assert(tree->next->next->back != NULL);
+
+    pll_unode_t * temp = tree->next;
     printNode(tree);
-    printNode(tree->next);
-    printTreeRec(tree->next->back);
-    printNode(tree->next->next);
-    printTreeRec(tree->next->next->back);
+    while(temp != tree) {
+      printNode(temp);
+      printTreeRec(temp->back);
+      temp = temp->next;
+      assert(temp != NULL);
+    }
   }
 }
 
