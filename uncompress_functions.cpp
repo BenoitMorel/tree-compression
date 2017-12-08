@@ -12,14 +12,19 @@ pll_unode_t * createTreeRec(sdsl::bit_vector succinct_structure, unsigned int * 
      (*succinct_idx)++;
      new_innernode->next->back = createTreeRec(succinct_structure, succinct_idx, node_permutation, node_idx);
      new_innernode->next->back->back = new_innernode->next;
+     assert(succinct_structure[*succinct_idx - 1] == 1);
      assert(succinct_structure[*succinct_idx] == 0);
      new_innernode->next->next->back = createTreeRec(succinct_structure, succinct_idx, node_permutation, node_idx);
      new_innernode->next->next->back->back = new_innernode->next->next;
+     assert(succinct_structure[*succinct_idx - 1] == 1);
      assert(succinct_structure[*succinct_idx] == 1);
      (*succinct_idx)++;
 
      return new_innernode;
    } else {
+     assert(succinct_structure[*succinct_idx] == 0);
+     assert(succinct_structure[*succinct_idx + 1] == 1);
+
      // leaf is reached
      pll_unode_t * new_leaf = (pll_unode_t *)calloc(1, sizeof(pll_unode_t));
      if (!new_leaf) {
@@ -58,4 +63,6 @@ void simple_uncompression(sdsl::bit_vector &succinct_structure, sdsl::int_vector
   pll_unode_t * root = tree->next->back;
   root->back = tree->next->next->back;
   tree->next->next->back->back = root;
+
+  printTree(root);
 }
