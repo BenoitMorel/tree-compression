@@ -300,3 +300,35 @@ void traverseTree(pll_unode_t * root, void (*leaf_func)(pll_unode_t *),
 
   traverseTreeRec(root->back, leaf_func, inner_node_func);
 }
+
+uint64_t enc(double x, size_t precision) {
+    double expo = 1;
+    for (size_t i=0; i<precision; ++i) {
+      expo *= 10;
+    }
+
+    int64_t y;
+    uint64_t z;
+    y = llround(x*expo);
+    if ( y < 0 ) {
+        z = 2*static_cast<uint64_t>(-y)-1;
+    } else {
+        z = 2*static_cast<uint64_t>(y);
+    }
+    return z;
+}
+
+double dec(uint64_t z, size_t precision) {
+    double expo = 1;
+    for (size_t i=0; i<precision; ++i) {
+      expo *= 10;
+    }
+
+    int64_t y;
+    if ( z % 2 ) {
+        y = -static_cast<int64_t>((z+1)/2);
+    } else {
+        y = static_cast<int64_t>(z/2);
+    }
+    return (static_cast<double>(y))/expo;
+}

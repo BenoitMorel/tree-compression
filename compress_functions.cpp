@@ -6,7 +6,7 @@
 #define PRINT_COMPRESSION 1
 
 /* set to 1 for printing created structures */
-#define PRINT_COMPRESSION_STRUCTURES 1
+#define PRINT_COMPRESSION_STRUCTURES 0
 
 /* static functions */
 static void fatal (const char * format, ...);
@@ -158,6 +158,53 @@ void free_inner_node(pll_unode_t * node) {
   free(node);
 }
 
+bool innerNodeCompare_(pll_unode_t * node1, pll_unode_t * node2) {
+  return ((intptr_t) node1->data) < ((intptr_t) node2->data);
+}
+
+void consensusDiffRec(pll_utree_t * tree1, pll_utree_t * tree2, pll_unode_t * node,
+              unsigned int * bl_idx, std::vector<double> &branch_lengths) {
+  assert(node != NULL);
+  double diff = tree2->nodes[node->pmatrix_index]->length - node->length;
+  //std::cout << "Length: " << node->length << "\tDiff: " << diff
+  //          <<  "\tPercent: " << (diff / node->length) << "\n";
+
+  branch_lengths[*bl_idx] = diff;
+  (*bl_idx)++;
+  if(node->next == NULL) {
+    // leaf
+
+  } else {
+    // inner node
+
+    // assign inner nodes to an array
+    std::vector<pll_unode_t*> inner_nodes;
+    pll_unode_t * temp_node = node->next;
+    while(temp_node->node_index != node->node_index) {
+      inner_nodes.push_back(temp_node);
+      assert(temp_node->next != NULL);
+      temp_node = temp_node->next;
+    }
+    assert(temp_node->node_index == node->node_index);
+
+    // sort the internal nodes
+    std::sort (inner_nodes.begin(), inner_nodes.end(), innerNodeCompare_);
+
+
+    for (size_t i = 0; i < inner_nodes.size(); i++) {
+        consensusDiffRec(tree1, tree2, inner_nodes[i]->back, bl_idx, branch_lengths);
+    }
+  }
+}
+
+void consensusDiff(pll_utree_t * tree1, pll_utree_t * tree2, pll_unode_t * node,
+            std::vector<double> &branch_lengths) {
+  assert(node->next == NULL);
+  assert(atoi(node->label) == 1);
+  unsigned int bl_idx = 1;
+  consensusDiffRec(tree1, tree2, node->back, &bl_idx, branch_lengths);
+}
+
 void rf_distance_compression(char * tree1_file, char * tree2_file) {
   /* tree properties */
   pll_utree_t * tree1 = NULL,
@@ -307,6 +354,30 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   unsigned int* consensus_node_id_to_branch_id = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
   assignBranchNumbers(root1, consensus_succinct_structure, consensus_node_permutation, consensus_branch_lengths, consensus_node_id_to_branch_id);
 
+  std::vector<double> consensus_branch_diff_lengths(2 * tip_count - 2 - (rf_distance / 2));
+  consensusDiff(tree1, tree2, root1, consensus_branch_diff_lengths);
+
+  std::vector<uint64_t> vec;
+
+  uint64_t z;
+  for (size_t i = 0; i < consensus_branch_diff_lengths.size(); i++) {
+    z = enc(consensus_branch_diff_lengths[i], 9);
+    vec.push_back(z);
+  }
+  uint64_t max_number = *max_element(vec.begin(), vec.end());
+  uint32_t width = sdsl::bits::hi(max_number);
+  sdsl::int_vector<0> seq(consensus_branch_diff_lengths.size(), 0, width);
+  for (size_t i=0; i<vec.size(); ++i) {
+       seq[i] = vec[i];
+  }
+  sdsl::wt_int<sdsl::rrr_vector<63>> wt;
+  sdsl::construct_im(wt, seq);
+  auto size_consensus_branch_lengths = sdsl::size_in_bytes(wt);
+
+  /*std::cout << "size consensus= " << consensus_branch_diff_lengths.size() * 8 << std::endl;
+  std::cout << "complete size = " << sdsl::size_in_bytes(wt) << std::endl;
+  std::cout << "bits per number = " << (sdsl::size_in_bytes(wt)*8.0)/seq.size() << std::endl;*/
+
   #if(PRINT_COMPRESSION_STRUCTURES)
   {
     std::cout << "Consensus tree after edge contraction: " << consensus_succinct_structure << "\n";
@@ -446,6 +517,13 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
       << " (edges to contract) + " << size_subtrees << " (subtrees) + "
       << size_permutations << " (permutations) + " << branch_lengths1.size() * 8 << " (branches) = "
       << size_edges_to_contract + size_subtrees + size_permutations + branch_lengths1.size() * 8
+      << " bytes\n";
+
+      std::cout << "\nRF compression size: " << size_edges_to_contract
+      << " (edges to contract) + " << size_subtrees << " (subtrees) + "
+      << size_permutations << " (permutations) + " << size_consensus_branch_lengths
+      << " (consensus branches) + " << 0 << " TODO (non-consensus branches) = "
+      << size_edges_to_contract + size_subtrees + size_permutations + size_consensus_branch_lengths
       << " bytes\n";
 
       std::cout << "---------------------------------------------------------\n";
