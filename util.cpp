@@ -42,6 +42,7 @@ void printTreeRec(pll_unode_t * tree) {
 }
 
 void printTree(pll_unode_t * tree) {
+  assert(tree->next == NULL);
   assert(tree->back != NULL);
 
   printNode(tree);
