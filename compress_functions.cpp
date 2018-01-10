@@ -6,7 +6,7 @@
 #define PRINT_COMPRESSION 1
 
 /* set to 1 for printing created structures */
-#define PRINT_COMPRESSION_STRUCTURES 0
+#define PRINT_COMPRESSION_STRUCTURES 1
 
 /* static functions */
 static void fatal (const char * format, ...);
@@ -130,6 +130,14 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
   return std::make_tuple(return_vector_topology, return_vector_order);
 }
 
+/**
+ * If the queue of tasks is not empty, the method pops a subtree of the queue
+ * and searches for a node with degree > 3. The method returns the rf-subtree
+ * topology and permutation of the nodes.
+ * @param tasks                queue of subtrees to check
+ * @param edgeIncidentPresent2 vector indicating which edges are are present in
+ * both trees (edges of the consensus tree)
+ */
 std::tuple<std::vector<int>, std::vector<int>> findRFSubtrees(std::queue<pll_unode_t *> &tasks, const std::vector<bool> &edgeIncidentPresent2) {
   std::vector<int> return_topology;
   std::vector<int> return_order;
@@ -203,6 +211,64 @@ void consensusDiff(pll_utree_t * tree1, pll_utree_t * tree2, pll_unode_t * node,
   assert(atoi(node->label) == 1);
   unsigned int bl_idx = 1;
   consensusDiffRec(tree1, tree2, node->back, &bl_idx, branch_lengths);
+}
+
+void nonConsensusBranchLengthsRec(pll_unode_t * tree, const std::vector<bool> node_incident, std::vector<double> &branch_lengths) {
+  assert(tree != NULL);
+
+  if(tree->next == NULL) {
+    // leaf
+  } else {
+    // inner node
+    if(node_incident[tree->node_index] == false) {
+      branch_lengths.push_back(tree->length);
+    }
+    pll_unode_t * current_node = tree->next;
+    while(current_node != tree) {
+      pll_unode_t * temp_node = current_node;
+      nonConsensusBranchLengthsRec(current_node->back, node_incident, branch_lengths);
+      current_node = current_node->next;
+    }
+  }
+}
+
+/**
+ * Stores all branch lengths of the branches that are not part of the consensus
+ * tree in an array
+ * @param root           root of the tree
+ * @param node_incident  vector telling which node is incident to an edge in the consensus tree
+ * @param branch_lengths return vector to write branch lengths in
+ */
+void nonConsensusBranchLengths(pll_unode_t * root, const std::vector<bool> node_incident, std::vector<double> &branch_lengths) {
+  assert(root->back != NULL);
+  assert(node_incident[root->node_index] == true);
+  assert(node_incident[root->back->node_index] == true);
+
+  nonConsensusBranchLengthsRec(root->back, node_incident, branch_lengths);
+}
+
+/**
+ * compress branch lengts
+ * @param  branch_lengths branch lengths to compress
+ * @return                size of the compression
+ */
+int compressBranchLengths(std::vector<double> branch_lengths) {
+  std::vector<uint64_t> vec;
+
+  uint64_t z;
+  for (size_t i = 0; i < branch_lengths.size(); i++) {
+    z = enc(branch_lengths[i], 9);
+    vec.push_back(z);
+  }
+  uint64_t max_number = *max_element(vec.begin(), vec.end());
+  uint32_t width = sdsl::bits::hi(max_number);
+  sdsl::int_vector<0> seq(branch_lengths.size(), 0, width);
+  for (size_t i=0; i<vec.size(); ++i) {
+       seq[i] = vec[i];
+  }
+  sdsl::wt_int<sdsl::rrr_vector<63>> wt;
+  sdsl::construct_im(wt, seq);
+  return sdsl::size_in_bytes(wt);
 }
 
 void rf_distance_compression(char * tree1_file, char * tree2_file) {
@@ -309,8 +375,27 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   int rf_distance = pllmod_utree_split_rf_distance_extended(splits1, splits2, s1_present, s2_present, tip_count);
 
   // TODO: just for test
-  pllmod_utree_split_rf_distance_extended_with_branches(splits1, splits2, splits_to_node1, splits_to_node2, s1_present, s2_present, tip_count);
+  //pllmod_utree_split_rf_distance_extended_with_branches(splits1, splits2, splits_to_node1, splits_to_node2, s1_present, s2_present, tip_count);
 
+  // vector storing if node is incident to edge in consensus tree
+  // true -> is incident
+  // false -> is not incident
+  std::vector<bool> node_incident (3 * (tip_count - 2) + tip_count, true);
+
+  for (unsigned int i=0; i<n_splits; ++i) {
+    if (s2_present[i] != 1) {
+      node_incident[splits_to_node2[i]->node_index] = false;
+      node_incident[splits_to_node2[i]->back->node_index] = false;
+    }
+  }
+
+  std::vector<double> non_consensus_branch_lengths;
+  nonConsensusBranchLengths(root2, node_incident, non_consensus_branch_lengths);
+
+  auto size_compressed_non_consensus_branch_lengths = compressBranchLengths(non_consensus_branch_lengths);
+  // take minimum
+  //auto size_non_consensus_branch_lengths = (size_compressed_non_consensus_branch_lengths < (non_consensus_branch_lengths.size()*8) ? size_compressed_non_consensus_branch_lengths : (non_consensus_branch_lengths.size()*8));
+  auto size_non_consensus_branch_lengths = size_compressed_non_consensus_branch_lengths;
 
   #if(PRINT_COMPRESSION_STRUCTURES)
   {
@@ -323,6 +408,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   sdsl::int_vector<> edges_to_contract(rf_distance / 2, 0);
   size_t idx = 0;
 
+  // create consensus tree
   for (size_t i = 0; i < n_splits; i++) {
       if(s1_present[i] == 0) {
           // contract edge in tree 1 to get to the conseneus tree
@@ -357,22 +443,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   std::vector<double> consensus_branch_diff_lengths(2 * tip_count - 2 - (rf_distance / 2));
   consensusDiff(tree1, tree2, root1, consensus_branch_diff_lengths);
 
-  std::vector<uint64_t> vec;
-
-  uint64_t z;
-  for (size_t i = 0; i < consensus_branch_diff_lengths.size(); i++) {
-    z = enc(consensus_branch_diff_lengths[i], 9);
-    vec.push_back(z);
-  }
-  uint64_t max_number = *max_element(vec.begin(), vec.end());
-  uint32_t width = sdsl::bits::hi(max_number);
-  sdsl::int_vector<0> seq(consensus_branch_diff_lengths.size(), 0, width);
-  for (size_t i=0; i<vec.size(); ++i) {
-       seq[i] = vec[i];
-  }
-  sdsl::wt_int<sdsl::rrr_vector<63>> wt;
-  sdsl::construct_im(wt, seq);
-  auto size_consensus_branch_lengths = sdsl::size_in_bytes(wt);
+  auto size_consensus_branch_lengths = compressBranchLengths(consensus_branch_diff_lengths);
 
   /*std::cout << "size consensus= " << consensus_branch_diff_lengths.size() * 8 << std::endl;
   std::cout << "complete size = " << sdsl::size_in_bytes(wt) << std::endl;
@@ -522,11 +593,18 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
       std::cout << "\nRF compression size: " << size_edges_to_contract
       << " (edges to contract) + " << size_subtrees << " (subtrees) + "
       << size_permutations << " (permutations) + " << size_consensus_branch_lengths
-      << " (consensus branches) + " << 0 << " TODO (non-consensus branches) = "
-      << size_edges_to_contract + size_subtrees + size_permutations + size_consensus_branch_lengths
+      << " (consensus branches) + " << size_non_consensus_branch_lengths << " (non-consensus branches) = "
+      << size_edges_to_contract + size_subtrees + size_permutations + size_consensus_branch_lengths + size_non_consensus_branch_lengths
       << " bytes\n";
 
       std::cout << "---------------------------------------------------------\n";
+      /*std::cout << size_edges_to_contract << ";" << size_subtrees << ";"
+      << size_permutations << ";" << size_consensus_branch_lengths
+      << ";" << size_non_consensus_branch_lengths << ";"
+      << size_edges_to_contract + size_subtrees + size_permutations
+      + size_consensus_branch_lengths + size_non_consensus_branch_lengths
+      << ";\n";*/
+
     }
     #endif
   }
