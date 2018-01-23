@@ -375,6 +375,51 @@ void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms)
   traverseConsensusRec(tree->back, perms);
 }
 
+
+void getNonBinaryNodesDFSRec(pll_unode_t * tree, std::vector<pll_unode_t *> &nodes) {
+  assert(tree != NULL);
+  if(tree->next == NULL) {
+    // leaf
+  } else {
+    // inner node
+    assert(tree->next != NULL);
+
+    int ctr = 1;
+
+    pll_unode_t * temp = tree->next;
+    while(temp != tree) {
+      ctr++;
+      if(ctr > 3) {
+          nodes.push_back(tree);
+          break;
+      }
+      temp = temp->next;
+      assert(temp != NULL);
+    }
+
+    temp = tree->next;
+    while(temp != tree) {
+      getNonBinaryNodesDFSRec(temp->back, nodes);
+      temp = temp->next;
+      assert(temp != NULL);
+    }
+  }
+}
+
+/**
+ * Traverses a given tree and returns a vector of all nodes with outdegree > 2,
+ * i.e. all nodes that make the tree non-binary, in DFS order.
+ * @param tree tree to traverse
+ */
+std::vector<pll_unode_t *> getNonBinaryNodesDFS(pll_unode_t * tree) {
+  assert(tree->next == NULL);
+  assert(tree->back != NULL);
+
+  std::vector<pll_unode_t *> nodes;
+  getNonBinaryNodesDFSRec(tree->back, nodes);
+  return nodes;
+}
+
 /**
  * Check if vector a is a permutation of vector b, i.e. check if both vectors
  * contain the same elements but in a different order.

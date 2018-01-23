@@ -103,3 +103,10 @@ void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms)
  * @return true iff a is permutation of b
  */
 bool isPermutation(const std::vector<int> &a, const std::vector<int> &b);
+
+/**
+ * Traverses a given tree and returns a vector of all nodes with outdegree > 2,
+ * i.e. all nodes that make the tree non-binary, in DFS order.
+ * @param tree tree to traverse
+ */
+std::vector<pll_unode_t *> getNonBinaryNodesDFS(pll_unode_t * tree);
