@@ -320,38 +320,6 @@ bool arraySumComp(const std::vector<int> &a, const std::vector<int> &b) {
 }
 
 /**
- * Check if vector a is a permutation of vector b, i.e. check if both vectors
- * contain the same elements but in a different order.
- * @param  a first vector
- * @param  b second vector
- * @return true iff a is permutation of b
- */
-bool isPermutation(const std::vector<int> &a, const std::vector<int> &b) {
-    if(a.size() != b.size()) {
-        return false;
-    }
-
-    std::vector<int> a_copy(a.size());
-    for (size_t i = 0; i < a.size(); i++) {
-      a_copy[i] = a[i];
-    }
-    std::sort(a_copy.begin(), a_copy.end());
-
-    std::vector<int> b_copy(b.size());
-    for (size_t i = 0; i < b.size(); i++) {
-      b_copy[i] = b[i];
-    }
-    std::sort(b_copy.begin(), b_copy.end());
-
-    for (size_t i = 0; i < a_copy.size(); i++) {
-      if(a_copy[i] != b_copy[i]) {
-        return false;
-      }
-    }
-    return true;
-}
-
-/**
  * Find the permuation to get from vector a to vector. Element i in the resulting
  * vector tells on which position in array b element a[i] is found.
  *
@@ -640,6 +608,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
     #if(PRINT_COMPRESSION_STRUCTURES)
     {
       std::cout << "\nPermutations:\n";
+      std::cout << "tree 2 <---> consensus tree\n";
     }
     #endif
 

@@ -94,3 +94,12 @@ double dec(uint64_t z, size_t precision);
  * @param perms vector to store permutations of children of nodes with outdegree > 2
  */
 void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms);
+
+/**
+ * Check if vector a is a permutation of vector b, i.e. check if both vectors
+ * contain the same elements but in a different order.
+ * @param  a first vector
+ * @param  b second vector
+ * @return true iff a is permutation of b
+ */
+bool isPermutation(const std::vector<int> &a, const std::vector<int> &b);
