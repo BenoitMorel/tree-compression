@@ -333,3 +333,44 @@ double dec(uint64_t z, size_t precision) {
     }
     return (static_cast<double>(y))/expo;
 }
+
+void traverseConsensusRec(pll_unode_t * tree, std::vector<std::vector<int>> &perms) {
+  assert(tree != NULL);
+  if(tree->next == NULL) {
+    // leaf
+  } else {
+    // inner node
+    assert(tree->next != NULL);
+
+    int ctr = 1;
+    std::vector<int> perm;
+
+    pll_unode_t * temp = tree->next;
+    while(temp != tree) {
+      traverseConsensusRec(temp->back, perms);
+      temp = temp->next;
+
+      perm.push_back((intptr_t) temp->back->data);
+
+      assert(temp != NULL);
+      ctr++;
+    }
+
+    if(ctr>3){
+        perms.push_back(perm);
+    }
+  }
+}
+
+/**
+ * Traverses the consensus tree, searches for nodes with outdegree > 2 and appends
+ * the order of the children to a vector.
+ * @param tree  root of the consensus tree
+ * @param perms vector to store permutations of children of nodes with outdegree > 2
+ */
+void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms) {
+  assert(tree->next == NULL);
+  assert(tree->back != NULL);
+
+  traverseConsensusRec(tree->back, perms);
+}

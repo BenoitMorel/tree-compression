@@ -6,7 +6,7 @@
 #define PRINT_COMPRESSION 1
 
 /* set to 1 for printing created structures */
-#define PRINT_COMPRESSION_STRUCTURES 0
+#define PRINT_COMPRESSION_STRUCTURES 1
 
 /* static functions */
 static void fatal (const char * format, ...);
@@ -299,47 +299,6 @@ int compressBranchLengths(std::vector<double> branch_lengths) {
   sdsl::wt_int<sdsl::rrr_vector<63>> wt;
   sdsl::construct_im(wt, seq);
   return sdsl::size_in_bytes(wt);
-}
-
-void traverseConsensusRec(pll_unode_t * tree, std::vector<std::vector<int>> &perms) {
-  assert(tree != NULL);
-  if(tree->next == NULL) {
-    // leaf
-  } else {
-    // inner node
-    assert(tree->next != NULL);
-
-    int ctr = 1;
-    std::vector<int> perm;
-
-    pll_unode_t * temp = tree->next;
-    while(temp != tree) {
-      traverseConsensusRec(temp->back, perms);
-      temp = temp->next;
-
-      perm.push_back((intptr_t) temp->back->data);
-
-      assert(temp != NULL);
-      ctr++;
-    }
-
-    if(ctr>3){
-        perms.push_back(perm);
-    }
-  }
-}
-
-/**
- * Traverses the consensus tree, searches for nodes with outdegree > 2 and appends
- * the order of the children as an array.
- * @param tree  root of the consensus tree
- * @param perms vector to store vector of the order
- */
-void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms) {
-  assert(tree->next == NULL);
-  assert(tree->back != NULL);
-
-  traverseConsensusRec(tree->back, perms);
 }
 
 /**

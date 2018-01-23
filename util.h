@@ -86,3 +86,11 @@ void traverseTree(pll_unode_t * root, void (*leaf_func)(pll_unode_t *),
 uint64_t enc(double x, size_t precision);
 
 double dec(uint64_t z, size_t precision);
+
+/**
+ * Traverses the consensus tree, searches for nodes with outdegree > 2 and appends
+ * the order of the children to a vector.
+ * @param tree  root of the consensus tree
+ * @param perms vector to store permutations of children of nodes with outdegree > 2
+ */
+void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms);
