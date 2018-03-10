@@ -1,18 +1,10 @@
 #include "compress_functions.h"
 
-/* set to 1 for printing splits */
-#define PRINT_SPLITS 0
-
-#define PRINT_COMPRESSION 1
-
-/* set to 1 for printing created structures */
-#define PRINT_COMPRESSION_STRUCTURES 1
-
 /* static functions */
 static void fatal (const char * format, ...);
 
 int simple_compression(const char * tree_file, const char * succinct_structure_file,
-        const char * node_permutation_file) {
+        const char * node_permutation_file, int flags) {
 
   /* tree properties */
   pll_utree_t * tree = NULL;
@@ -56,8 +48,7 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
   // TODO: compress branches
   auto size_branches = branch_lengths.size() * 8;
 
-  #if(PRINT_COMPRESSION_STRUCTURES)
-  {
+  if (flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "Succinct representation: " << succinct_structure << "\n";
     std::cout << "\tuncompressed size: " << size_topology << " bytes\n";
 
@@ -70,25 +61,24 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
     }
     std::cout << "\n\tcompressed size: " << size_branches << " bytes\n";
   }
-  #endif
 
   // write stuctures to file
   store_to_file(succinct_structure, succinct_structure_file);
   store_to_file(node_permutation, node_permutation_file);
   saveArray(&branch_lengths[0], branch_lengths.size(), "output_files/branch_lengths.txt");
 
-  #if(PRINT_COMPRESSION)
-  {
+  if(flags & PRINT_COMPRESSION) {
     std::cout << "Simple compression size: " << size_topology
-              << " (topology) + " << size_node_permutation << " (leaves) + " << size_branches
-              << " (branches) = " << size_topology + size_node_permutation + size_branches
-              << " bytes\n";
+    << " (topology) + " << size_node_permutation << " (leaves) + " << size_branches
+    << " (branches) = " << size_topology + size_node_permutation + size_branches
+    << " bytes\n";
 
     std::cout << "---------------------------------------------------------\n";
   }
-  #endif
 
   free(node_id_to_branch_id);
+
+  return 0;
 }
 
 std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2,
@@ -350,9 +340,10 @@ std::vector<int> findPermutation(const std::vector<int> &a, const std::vector<in
     return permutation;
 }
 
-void rf_distance_compression(const char * tree1_file, const char * tree2_file,
+int rf_distance_compression(const char * tree1_file, const char * tree2_file,
         const char * edges_to_contract_file, const char * subtrees_succinct_file,
-        const char * node_permutations_file) {
+        const char * node_permutations_file, int flags) {
+
   /* tree properties */
   pll_utree_t * tree1 = NULL,
               * tree2 = NULL;
@@ -400,12 +391,10 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
   unsigned int* node_id_to_branch_id2 = (unsigned int*) malloc ((tree2->inner_count * 3 + tree2->tip_count) * sizeof(unsigned int));
   assignBranchNumbers(root2, succinct_structure2, node_permutation2, branch_lengths2, node_id_to_branch_id2);
 
-  #if(PRINT_COMPRESSION_STRUCTURES)
-  {
+  if(flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "Succinct representation tree 1: " << succinct_structure1 << "\n";
     std::cout << "Succinct representation tree 2: " << succinct_structure2 << "\n";
   }
-  #endif
 
   /* 1. creating the split sets manually */
   unsigned int n_splits = tip_count - 3;
@@ -414,17 +403,15 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
                                                     tip_count,
                                                     splits_to_node1);
 
-  #if(PRINT_SPLITS)
+  if (flags & PRINT_SPLITS) {
+    unsigned int i;
+    for (i=0; i<n_splits; ++i)
     {
-      unsigned int i;
-      for (i=0; i<n_splits; ++i)
-      {
-        pllmod_utree_split_show(splits1[i], tip_count);
-        printf("\n");
-      }
+      pllmod_utree_split_show(splits1[i], tip_count);
       printf("\n");
     }
-  #endif
+    printf("\n");
+  }
 
   /* compute the splits, but also the nodes corresponding to each split */
   pll_unode_t ** splits_to_node2 = (pll_unode_t **) malloc(n_splits * sizeof(pll_unode_t *));
@@ -432,21 +419,18 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
                                                     tip_count,
                                                     splits_to_node2);
 
-
-  #if(PRINT_SPLITS)
+  if(flags & PRINT_SPLITS) {
+    unsigned int i;
+    for (i=0; i<n_splits; ++i)
     {
-      unsigned int i;
-      for (i=0; i<n_splits; ++i)
-      {
-        pllmod_utree_split_show(splits2[i], tip_count);
-        printf(" node: Pmatrix:%d Nodes:%d<->%d Length:%lf\n",
-                                  splits_to_node2[i]->pmatrix_index,
-                                  splits_to_node2[i]->node_index,
-                                  splits_to_node2[i]->back->node_index,
-                                  splits_to_node2[i]->length);
-      }
+      pllmod_utree_split_show(splits2[i], tip_count);
+      printf(" node: Pmatrix:%d Nodes:%d<->%d Length:%lf\n",
+      splits_to_node2[i]->pmatrix_index,
+      splits_to_node2[i]->node_index,
+      splits_to_node2[i]->back->node_index,
+      splits_to_node2[i]->length);
     }
-  #endif
+  }
 
   // create arrays indicating whether a split is common in both trees or not
   int * s1_present = (int*) calloc(n_splits, sizeof(int));
@@ -454,9 +438,6 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
 
   // fill the arrays s1_present and s2_present
   int rf_distance = pllmod_utree_split_rf_distance_extended(splits1, splits2, s1_present, s2_present, tip_count);
-
-  // TODO: just for test
-  //pllmod_utree_split_rf_distance_extended_with_branches(splits1, splits2, splits_to_node1, splits_to_node2, s1_present, s2_present, tip_count);
 
   // vector storing if node is incident to edge in consensus tree
   // true -> is incident
@@ -478,11 +459,9 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
   //auto size_non_consensus_branch_lengths = (size_compressed_non_consensus_branch_lengths < (non_consensus_branch_lengths.size()*8) ? size_compressed_non_consensus_branch_lengths : (non_consensus_branch_lengths.size()*8));
   auto size_non_consensus_branch_lengths = size_compressed_non_consensus_branch_lengths;
 
-  #if(PRINT_COMPRESSION_STRUCTURES)
-  {
+  if(flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "RF-distance: " << rf_distance << "\n";
   }
-  #endif
 
   assert(rf_distance % 2 == 0);
   // create array containing all edges to contract in tree1
@@ -506,13 +485,10 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
   sdsl::util::bit_compress(edges_to_contract);
   auto size_edges_to_contract = sdsl::size_in_bytes(edges_to_contract);
 
-  #if(PRINT_COMPRESSION_STRUCTURES)
-  {
+  if(flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "Edges to contract in tree 1: " << edges_to_contract << "\n";
-    std::cout << "\tcompressed size: " << size_edges_to_contract << " bytes\n";
-    printf("\n\n");
+    std::cout << "\tcompressed size: " << size_edges_to_contract << " bytes\n\n";
   }
-  #endif
 
   // succinct_structure stores the topology for the consensus tree in balanced parantheses ("0=(, 1=)")
   sdsl::bit_vector consensus_succinct_structure(4 * tip_count - rf_distance - 2, 0);
@@ -530,11 +506,9 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
   std::cout << "complete size = " << sdsl::size_in_bytes(wt) << std::endl;
   std::cout << "bits per number = " << (sdsl::size_in_bytes(wt)*8.0)/seq.size() << std::endl;*/
 
-  #if(PRINT_COMPRESSION_STRUCTURES)
-  {
+  if(flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "Consensus tree after edge contraction: " << consensus_succinct_structure << "\n";
   }
-  #endif
 
   // create an array that indicates whether the edge incident to the node_id in tree 2 is common in both trees or not
   std::vector<bool> edgeIncidentPresent2 (tree2->inner_count * 3 + tree2->tip_count);
@@ -570,22 +544,18 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
   }
 
   if(!subtrees.empty()) {
-    #if(PRINT_COMPRESSION_STRUCTURES)
-    {
+    if(flags & PRINT_COMPRESSION_STRUCTURES) {
       std::cout << "\nSubtrees: \n";
     }
-    #endif
     int subtree_elements = 0;
     for (std::vector<int> i: subtrees) {
       subtree_elements += i.size();
-      #if(PRINT_COMPRESSION_STRUCTURES)
-      {
+      if(flags & PRINT_COMPRESSION_STRUCTURES) {
         for (auto j : i) {
           std::cout << j;
         }
         std::cout << "\n";
       }
-      #endif
     }
 
     size_t subtrees_index = 0;
@@ -601,12 +571,10 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
 
     auto size_subtrees = sdsl::size_in_bytes(subtrees_succinct);
 
-    #if(PRINT_COMPRESSION_STRUCTURES)
-    {
+    if(flags & PRINT_COMPRESSION_STRUCTURES) {
       std::cout << "\nSuccinct subtree representation: " << subtrees_succinct << "\n";
       std::cout << "\tcompressed size: " << size_subtrees << " bytes\n";
     }
-    #endif
 
     std::sort(permutations.begin(), permutations.end(), arraySumComp);
 
@@ -615,12 +583,10 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
 
     std::vector<std::vector<int>> normalized_permutations;
 
-    #if(PRINT_COMPRESSION_STRUCTURES)
-    {
+    if(flags & PRINT_COMPRESSION_STRUCTURES) {
       std::cout << "\nPermutations:\n";
       std::cout << "tree 2 <---> consensus tree\n";
     }
-    #endif
 
     int permutation_elements = 0;
     for(auto perm: tree2_perms) {
@@ -674,15 +640,12 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
     sdsl::util::bit_compress(succinct_permutations);
     auto size_permutations = sdsl::size_in_bytes(succinct_permutations);
 
-    #if(PRINT_COMPRESSION_STRUCTURES)
-    {
+    if(flags & PRINT_COMPRESSION_STRUCTURES) {
       std::cout << "\nSuccinct permutation representation: " << succinct_permutations << "\n";
       std::cout << "\tcompressed size: " << size_permutations << " bytes\n";
     }
-    #endif
 
-    #if(PRINT_COMPRESSION)
-    {
+    if(flags & PRINT_COMPRESSION) {
       std::cout << "\nRF compression size: " << size_edges_to_contract
       << " (edges to contract) + " << size_subtrees << " (subtrees) + "
       << size_permutations << " (permutations) + " << branch_lengths1.size() * 8 << " (branches) = "
@@ -705,7 +668,6 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
       << ";\n";*/
 
     }
-    #endif
 
     // write stuctures to file
     store_to_file(edges_to_contract, edges_to_contract_file);
@@ -740,6 +702,7 @@ void rf_distance_compression(const char * tree1_file, const char * tree2_file,
   free(s1_present);
   free(s2_present);
 
+  return 0;
 }
 
 /******************************************************************************/

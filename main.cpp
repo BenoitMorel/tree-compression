@@ -12,16 +12,17 @@ int main (int argc, const char * argv[])
     fatal (" syntax: %s [newick] [newick]", argv[0]);
 
   std::cout << "Simple compression of tree 1: \n";
-  simple_compression(argv[1], "output_files/succinct_tree.sdsl", "output_files/node_permutation.sdsl");
+  simple_compression(argv[1], "output_files/succinct_tree.sdsl", "output_files/node_permutation.sdsl", PRINT_COMPRESSION);
   std::cout << "\n";
 
-  // std::cout << "Simple compression of tree 2: \n";
-  // simple_compression(argv[2]);
-  // std::cout << "\n";
-  //
-  // std::cout << "RF-compression: \n";
-  // rf_distance_compression(argv[1], argv[2]);
-  // std::cout << "\n";
+  std::cout << "Simple compression of tree 2: \n";
+  simple_compression(argv[2], "output_files/succinct_tree.sdsl", "output_files/node_permutation.sdsl", PRINT_COMPRESSION);
+  std::cout << "\n";
+
+  std::cout << "RF-compression: \n";
+  rf_distance_compression(argv[1], argv[2], "output_files/edges_to_contract.sdsl",
+                    "output_files/subtrees_succinct.sdsl", "output_files/node_permutations.sdsl", PRINT_COMPRESSION_STRUCTURES);
+  std::cout << "\n";
 
   /*for (int i = 1; i < 1001; i++) {
       //std::cout << "RF-compression: \n";
