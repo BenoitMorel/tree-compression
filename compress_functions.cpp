@@ -1,8 +1,5 @@
 #include "compress_functions.h"
 
-/* static functions */
-static void fatal (const char * format, ...);
-
 int simple_compression(const char * tree_file, const char * succinct_structure_file,
         const char * node_permutation_file, int flags) {
 
@@ -351,17 +348,35 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
 
   /* parse the input trees */
   tree1 = pll_utree_parse_newick (tree1_file);
+  if(tree1 == NULL) {
+      // ERROR: tree could not be parsed
+      // --> syntax of newick file is not correct
+      // --> tree has less than 3 leaves
+      return -1;
+  }
   tree2 = pll_utree_parse_newick (tree2_file);
+  if(tree2 == NULL) {
+      // ERROR: tree could not be parsed
+      // --> syntax of newick file is not correct
+      // --> tree has less than 3 leaves
+      return -1;
+  }
   tip_count = tree1->tip_count;
 
-  if (tip_count != tree2->tip_count)
-    fatal("Trees have different number of tips!");
+  if (tip_count != tree2->tip_count) {
+    // ERROR: Trees have different number of tips!
+    return -1;
+  }
 
-  if (!pllmod_utree_consistency_set(tree1, tree2))
-    fatal("Cannot set trees consistent!");
+  if (!pllmod_utree_consistency_set(tree1, tree2)) {
+    // ERROR: Cannot set trees consistent!
+    return -1;
+  }
 
-  if (!pllmod_utree_consistency_check(tree1, tree2))
-    fatal("Tip node IDs are not consistent!");
+  if (!pllmod_utree_consistency_check(tree1, tree2)) {
+    // ERROR: Tip node IDs are not consistent!
+    return -1;
+  }
 
   // search for the root of the trees
   pll_unode_t * root1 = searchRoot(tree1);
@@ -703,18 +718,4 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
   free(s2_present);
 
   return 0;
-}
-
-/******************************************************************************/
-/******************************************************************************/
-/******************************************************************************/
-
-static void fatal (const char * format, ...)
-{
-  va_list argptr;
-  va_start(argptr, format);
-  vfprintf (stderr, format, argptr);
-  va_end(argptr);
-  fprintf (stderr, "\n");
-  exit (EXIT_FAILURE);
 }

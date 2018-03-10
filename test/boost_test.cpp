@@ -2,7 +2,6 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "../compress_functions.cpp"
-#include "../compress_functions.h"
 #include "../uncompress_functions.cpp"
 #include "../uncompress_functions.h"
 #include "../util.cpp"
@@ -37,7 +36,7 @@ bool vectorsEqual(sdsl::int_vector<> a, std::vector<int> b) {
 BOOST_AUTO_TEST_SUITE(simple_compression_test_suite)
 
 BOOST_AUTO_TEST_CASE(simple_compression_easy_tree1) {
-    simple_compression("test_inputs/easy_tree1.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl");
+    simple_compression("test_inputs/easy_tree1.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl", 0);
 
     sdsl::bit_vector subtrees_succinct_loaded;
     load_from_file(subtrees_succinct_loaded, "simple_comp_succinct_tree.sdsl");
@@ -52,7 +51,7 @@ BOOST_AUTO_TEST_CASE(simple_compression_easy_tree1) {
 }
 
 BOOST_AUTO_TEST_CASE(simple_compression_small_tree1) {
-    simple_compression("test_inputs/small_tree1.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl");
+    simple_compression("test_inputs/small_tree1.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl", 0);
 
     sdsl::bit_vector subtrees_succinct_loaded;
     load_from_file(subtrees_succinct_loaded, "simple_comp_succinct_tree.sdsl");
@@ -67,19 +66,19 @@ BOOST_AUTO_TEST_CASE(simple_compression_small_tree1) {
 }
 
 BOOST_AUTO_TEST_CASE(simple_compression_trivial_tree1) {
-    int result = simple_compression("test_inputs/trivial_tree1.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl");
+    int result = simple_compression("test_inputs/trivial_tree1.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl", 0);
 
     BOOST_CHECK(result == -1);
 }
 
 BOOST_AUTO_TEST_CASE(simple_compression_trivial_tree2) {
-    int result = simple_compression("test_inputs/trivial_tree2.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl");
+    int result = simple_compression("test_inputs/trivial_tree2.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl", 0);
 
     BOOST_CHECK(result == -1);
 }
 
 BOOST_AUTO_TEST_CASE(simple_compression_invalid_tree) {
-    int result = simple_compression("test_inputs/invalid_tree.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl");
+    int result = simple_compression("test_inputs/invalid_tree.nwk", "simple_comp_succinct_tree.sdsl", "simple_comp_node_permutation.sdsl", 0);
 
     BOOST_CHECK(result == -1);
 }
@@ -95,7 +94,7 @@ BOOST_AUTO_TEST_SUITE(rf_distance_compression_test_suite)
 
 BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree1) {
 
-    rf_distance_compression("test_inputs/rf_easy_1_1.nwk", "test_inputs/rf_easy_1_2.nwk", "rf_edges_to_contract.sdsl", "rf_subtrees_succinct.sdsl", "rf_permutations.sdsl");
+    rf_distance_compression("test_inputs/rf_easy_1_1.nwk", "test_inputs/rf_easy_1_2.nwk", "rf_edges_to_contract.sdsl", "rf_subtrees_succinct.sdsl", "rf_permutations.sdsl", 0);
 
     sdsl::int_vector<> edges_to_contract_loaded;
     load_from_file(edges_to_contract_loaded, "rf_edges_to_contract.sdsl");
@@ -117,7 +116,7 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree1) {
 
 BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree2) {
 
-    rf_distance_compression("test_inputs/rf_easy_2_1.nwk", "test_inputs/rf_easy_2_2.nwk", "rf_edges_to_contract.sdsl", "rf_subtrees_succinct.sdsl", "rf_permutations.sdsl");
+    rf_distance_compression("test_inputs/rf_easy_2_1.nwk", "test_inputs/rf_easy_2_2.nwk", "rf_edges_to_contract.sdsl", "rf_subtrees_succinct.sdsl", "rf_permutations.sdsl", 0);
 
     sdsl::int_vector<> edges_to_contract_loaded;
     load_from_file(edges_to_contract_loaded, "rf_edges_to_contract.sdsl");
@@ -139,7 +138,7 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree2) {
 
 BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree3) {
 
-    rf_distance_compression("test_inputs/rf_easy_3_1.nwk", "test_inputs/rf_easy_3_2.nwk", "rf_edges_to_contract.sdsl", "rf_subtrees_succinct.sdsl", "rf_permutations.sdsl");
+    rf_distance_compression("test_inputs/rf_easy_3_1.nwk", "test_inputs/rf_easy_3_2.nwk", "rf_edges_to_contract.sdsl", "rf_subtrees_succinct.sdsl", "rf_permutations.sdsl", 0);
 
     sdsl::int_vector<> edges_to_contract_loaded;
     load_from_file(edges_to_contract_loaded, "rf_edges_to_contract.sdsl");
