@@ -30,7 +30,8 @@ extern "C" {
  *
  * @param tree_file the tree file
  */
-void simple_compression(char * tree_file);
+int simple_compression(const char * tree_file, const char * succinct_structure_file,
+        const char * node_permutation_file);
 
 /**
  * Takes two tree files and computes a compression between the two
@@ -39,4 +40,6 @@ void simple_compression(char * tree_file);
  * @param tree1_file first tree
  * @param tree2_file second tree
  */
-void rf_distance_compression(char * tree1_file, char * tree2_file);
+void rf_distance_compression(const char * tree1_file, const char * tree2_file,
+        const char * edges_to_contract_file, const char * subtrees_succinct_file,
+        const char * node_permutations_file);

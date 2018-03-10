@@ -11,14 +11,23 @@
 /* static functions */
 static void fatal (const char * format, ...);
 
-void simple_compression(char * tree_file) {
+int simple_compression(const char * tree_file, const char * succinct_structure_file,
+        const char * node_permutation_file) {
+
   /* tree properties */
   pll_utree_t * tree = NULL;
   unsigned int tip_count;
 
   /* parse the input tree */
   tree = pll_utree_parse_newick (tree_file);
+  if(tree == NULL) {
+      // ERROR: tree could not be parsed
+      // --> syntax of newick file is not correct
+      // --> tree has less than 3 leaves
+      return -1;
+  }
   tip_count = tree->tip_count;
+  assert(tip_count >= 3);
 
   // search for the root of the tree
   pll_unode_t * root = searchRoot(tree);
@@ -64,8 +73,8 @@ void simple_compression(char * tree_file) {
   #endif
 
   // write stuctures to file
-  store_to_file(succinct_structure, "output_files/succinct_tree.sdsl");
-  store_to_file(node_permutation, "output_files/node_permutation.sdsl");
+  store_to_file(succinct_structure, succinct_structure_file);
+  store_to_file(node_permutation, node_permutation_file);
   saveArray(&branch_lengths[0], branch_lengths.size(), "output_files/branch_lengths.txt");
 
   #if(PRINT_COMPRESSION)
@@ -341,7 +350,9 @@ std::vector<int> findPermutation(const std::vector<int> &a, const std::vector<in
     return permutation;
 }
 
-void rf_distance_compression(char * tree1_file, char * tree2_file) {
+void rf_distance_compression(const char * tree1_file, const char * tree2_file,
+        const char * edges_to_contract_file, const char * subtrees_succinct_file,
+        const char * node_permutations_file) {
   /* tree properties */
   pll_utree_t * tree1 = NULL,
               * tree2 = NULL;
@@ -503,7 +514,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
   }
   #endif
 
-  // succinct_structure stores the topology fo the consensus tree in balanced parantheses ("0=(, 1=)")
+  // succinct_structure stores the topology for the consensus tree in balanced parantheses ("0=(, 1=)")
   sdsl::bit_vector consensus_succinct_structure(4 * tip_count - rf_distance - 2, 0);
   sdsl::int_vector<> consensus_node_permutation(tip_count, 0, 32);
   std::vector<double> consensus_branch_lengths(2 * tip_count - 2 - (rf_distance / 2));
@@ -564,7 +575,7 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
       std::cout << "\nSubtrees: \n";
     }
     #endif
-    int subtree_elements = subtrees.size() - 1;
+    int subtree_elements = 0;
     for (std::vector<int> i: subtrees) {
       subtree_elements += i.size();
       #if(PRINT_COMPRESSION_STRUCTURES)
@@ -578,14 +589,13 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
     }
 
     size_t subtrees_index = 0;
-    // subtrees_succinct stores all subtrees to insert into the consensus tree, split by a 1
+    // subtrees_succinct stores all subtrees to insert into the consensus tree
     sdsl::bit_vector subtrees_succinct(subtree_elements, 1);
     for (std::vector<int> i: subtrees) {
       for (auto j : i) {
         subtrees_succinct[subtrees_index] = j;
         subtrees_index++;
       }
-      subtrees_index++;
     }
     assert(subtrees_index = subtrees_succinct.size());
 
@@ -696,6 +706,11 @@ void rf_distance_compression(char * tree1_file, char * tree2_file) {
 
     }
     #endif
+
+    // write stuctures to file
+    store_to_file(edges_to_contract, edges_to_contract_file);
+    store_to_file(subtrees_succinct, subtrees_succinct_file);
+    store_to_file(succinct_permutations, node_permutations_file);
   }
 
   // TODO: free procs segmentation fault
