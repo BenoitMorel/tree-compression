@@ -596,13 +596,13 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
     std::vector<std::vector<int>> tree2_perms;
     traverseConsensus(root1, tree2_perms);
 
-    std::vector<std::vector<int>> normalized_permutations;
-
     if(flags & PRINT_COMPRESSION_STRUCTURES) {
       std::cout << "\nPermutations:\n";
       std::cout << "tree 2 <---> consensus tree\n";
     }
 
+    // find corresponding permutations of nodes
+    std::vector<std::vector<int>> normalized_permutations;
     int permutation_elements = 0;
     for(auto perm: tree2_perms) {
         permutation_elements += perm.size();
@@ -614,8 +614,7 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
         size_t temp_index = index;
         while(!arraySumComp(permutations[temp_index], perm) && temp_index < permutations.size()) {
           if(isPermutation(permutations[temp_index], perm)) {
-            #if(PRINT_COMPRESSION_STRUCTURES)
-            {
+            if(flags & PRINT_COMPRESSION_STRUCTURES) {
               for(auto x: permutations[temp_index]) {
                   std::cout << x << " ";
               }
@@ -630,7 +629,6 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
               }
               std::cout <<  '\n';
             }
-            #endif
             normalized_permutations.push_back(findPermutation(permutations[temp_index], perm));
             break;
           }
