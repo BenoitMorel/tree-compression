@@ -114,6 +114,8 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree1) {
     BOOST_CHECK(vectorsEqual(permutations_loaded, permutations));
 }
 
+
+
 BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree2) {
 
     rf_distance_compression("test_inputs/rf_easy_2_1.nwk", "test_inputs/rf_easy_2_2.nwk", "rf_edges_to_contract.sdsl", "rf_subtrees_succinct.sdsl", "rf_permutations.sdsl", 0);
@@ -156,6 +158,22 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree3) {
     BOOST_CHECK(vectorsEqual(edges_to_contract_loaded, edges_to_contract));
     BOOST_CHECK(vectorsEqual(subtrees_succinct_loaded, subtrees_succinct));
     BOOST_CHECK(vectorsEqual(permutations_loaded, permutations));
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_AUTO_TEST_SUITE(util_test_suite)
+
+BOOST_AUTO_TEST_CASE(util_test_1) {
+
+	pll_utree_t * tree = pll_utree_parse_newick ("test_inputs/rf_easy_3_1.nwk");
+
+    pll_unode_t * root = searchRoot(tree);
+
+
+    BOOST_CHECK(treesEqual(root, root));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

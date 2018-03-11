@@ -110,3 +110,5 @@ bool isPermutation(const std::vector<int> &a, const std::vector<int> &b);
  * @param tree tree to traverse
  */
 std::vector<pll_unode_t *> getNonBinaryNodesDFS(pll_unode_t * tree);
+
+bool treesEqual(pll_unode_t * tree1, pll_unode_t * tree2);

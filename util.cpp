@@ -5,7 +5,7 @@
 
 void printNode(pll_unode_t * node) {
   assert(node != NULL);
-  printf("Node Index: %i\t\tPMatrix Index: %i\t\tLabel: %s\t\tLength: %f\n",
+  printf("Node Index: %i, PMatrix Index: %i, Label: %s, Length: %f\n",
           node->node_index, node->pmatrix_index, node->label, node->length);
 }
 
@@ -21,20 +21,24 @@ pll_unode_t * searchRoot(pll_utree_t * tree) {
   return NULL;
 }
 
-void printTreeRec(pll_unode_t * tree) {
+void printTreeRec(pll_unode_t * tree, std::string tabs) {
   assert(tree != NULL);
   if(tree->next == NULL) {
     // leaf
+    std::cout << tabs;
     printNode(tree);
   } else {
     // inner node
     assert(tree->next != NULL);
 
     pll_unode_t * temp = tree->next;
+    std::cout << tabs;
     printNode(tree);
+    int ctr = 1;
     while(temp != tree) {
+      std::cout << tabs;
       printNode(temp);
-      printTreeRec(temp->back);
+      printTreeRec(temp->back, (tabs + "\t"));
       temp = temp->next;
       assert(temp != NULL);
     }
@@ -46,7 +50,7 @@ void printTree(pll_unode_t * tree) {
   assert(tree->back != NULL);
 
   printNode(tree);
-  printTreeRec(tree->back);
+  printTreeRec(tree->back, "\t");
 
 }
 
@@ -86,7 +90,7 @@ void orderTreeRec(pll_unode_t * tree) {
   if(tree->next != NULL) {
     // inner node
     assert(tree->next != NULL);
-    assert(tree->next->next->next == tree); // tree is binary
+    //assert(tree->next->next->next == tree); // tree is binary
 
     if(((intptr_t) tree->next->data) > ((intptr_t) tree->next->next->data)) {
         // swap tree->next and tree->next->next
@@ -348,9 +352,10 @@ void traverseConsensusRec(pll_unode_t * tree, std::vector<std::vector<int>> &per
     pll_unode_t * temp = tree->next;
     while(temp != tree) {
       traverseConsensusRec(temp->back, perms);
-      temp = temp->next;
 
       perm.push_back((intptr_t) temp->back->data);
+
+      temp = temp->next;
 
       assert(temp != NULL);
       ctr++;
@@ -448,6 +453,103 @@ bool isPermutation(const std::vector<int> &a, const std::vector<int> &b) {
       if(a_copy[i] != b_copy[i]) {
         return false;
       }
+    }
+    return true;
+}
+
+void printTreeEqualError(std::string message, pll_unode_t * node1, pll_unode_t * node2) {
+  std::cout << message << "\n";
+  std::cout << "Node 1:\n";
+  printNode(node1);
+  std::cout << "\nNode 2:\n";
+  printNode(node2);
+}
+
+bool subnodesEqual(pll_unode_t * subnode1, pll_unode_t * subnode2) {
+    if(strcmp(subnode1->label, subnode2->label) != 0) {
+      printTreeEqualError("labels of subnodes are not identical", subnode1, subnode2);
+      return false;
+    }
+    if(subnode1->length != subnode2->length) {
+      printTreeEqualError("lengths of subnodes are not identical", subnode1, subnode2);
+      return false;
+    }
+}
+
+bool treesEqual(pll_unode_t * node1, pll_unode_t * node2) {
+    if(node1 == NULL) {
+      if(node2 == NULL) {
+        return true;
+      } else {
+        printTreeEqualError("node1 is NULL, node 2 not", node1, node2);
+        return false;
+      }
+    }
+
+    if(node2 == NULL) {
+      if(node1 == NULL) {
+        return true;
+      } else {
+        printTreeEqualError("node2 is NULL, node 1 not", node1, node2);
+        return false;
+      }
+    }
+
+    if(node1->next == NULL) {
+      if (node2->next == NULL) {
+        return subnodesEqual(node1, node2);
+      } else {
+        printTreeEqualError("node2 has more subnodes than node1", node1, node2);
+        return false;
+      }
+    }
+
+    if(node2->next == NULL) {
+      if (node1->next == NULL) {
+        return subnodesEqual(node1, node2);
+      } else {
+        printTreeEqualError("node1 has more subnodes than node1", node1, node2);
+        return false;
+      }
+    }
+
+    int subnodes_in_node1 = 1;
+    pll_unode_t * temp = node1->next;
+    while(temp != node1) {
+      subnodes_in_node1++;
+      temp = temp->next;
+      assert(temp != NULL);
+    }
+
+    int subnodes_in_node2 = 1;
+    temp = node2->next;
+    while(temp != node2) {
+      subnodes_in_node2++;
+      temp = temp->next;
+      assert(temp != NULL);
+    }
+
+    if(subnodes_in_node1 != subnodes_in_node2) {
+      std::cout << "different amount of subnodes";
+      return false;
+    }
+
+
+    if(!subnodesEqual(node1, node2)) {
+      return false;
+    }
+    pll_unode_t * temp1 = node1->next;
+    pll_unode_t * temp2 = node2->next;
+    while(temp1 != node1) {
+      if(!subnodesEqual(temp1, temp2)) {
+          return false;
+      }
+      if(!treesEqual(temp1->back, temp2->back)) {
+          return false;
+      }
+      temp1 = temp1->next;
+      temp2 = temp2->next;
+      assert(temp != NULL);
     }
     return true;
 }
