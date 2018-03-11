@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree3) {
 
     std::vector<int> edges_to_contract {4, 5, 8};
     std::vector<int> subtrees_succinct {0, 0, 1, 1, 0, 1};
-    std::vector<int> permutations {0, 3, 2, 4, 1};
+    std::vector<int> permutations {0, 4, 2, 1, 3};
 
     BOOST_CHECK(vectorsEqual(edges_to_contract_loaded, edges_to_contract));
     BOOST_CHECK(vectorsEqual(subtrees_succinct_loaded, subtrees_succinct));
