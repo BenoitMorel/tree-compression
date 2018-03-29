@@ -1,49 +1,5 @@
  #include "uncompress_functions.h"
 
-// pll_unode_t * createTreeRec(sdsl::bit_vector succinct_structure, unsigned int * succinct_idx,
-//                         std::vector<pll_unode_t *> node_permutation, unsigned int * permutation_idx) {
-//
-//    assert(succinct_structure[*succinct_idx] == 0);
-//    assert(*succinct_idx < succinct_structure.size() - 1);
-//
-//    if(succinct_structure[*succinct_idx + 1] == 0) {
-//      // create a new node
-//      pll_unode_t * new_innernode = pllmod_utree_create_node(0, 0, NULL, NULL);
-//      (*succinct_idx)++;
-//      new_innernode->next->back = createTreeRec(succinct_structure, succinct_idx, node_permutation, permutation_idx);
-//      new_innernode->next->back->back = new_innernode->next;
-//      assert(succinct_structure[*succinct_idx - 1] == 1);
-//      assert(succinct_structure[*succinct_idx] == 0);
-//      new_innernode->next->next->back = createTreeRec(succinct_structure, succinct_idx, node_permutation, permutation_idx);
-//      new_innernode->next->next->back->back = new_innernode->next->next;
-//      assert(succinct_structure[*succinct_idx - 1] == 1);
-//      assert(succinct_structure[*succinct_idx] == 1);
-//      (*succinct_idx)++;
-//
-//      return new_innernode;
-//    } else {
-//      assert(succinct_structure[*succinct_idx] == 0);
-//      assert(succinct_structure[*succinct_idx + 1] == 1);
-//
-//      *succinct_idx = *succinct_idx + 2;
-//
-//      pll_unode_t * leaf = node_permutation[permutation_idx];
-//      (*permutation_idx)++;
-//      return leaf;
-//    }
-// }
-//
-// pll_unode_t * createTree(sdsl::bit_vector succinct_structure, unsigned int start,
-//                         std::vector<pll_unode_t *> node_permutation) {
-//
-//     unsigned int succinct_idx = start;
-//     unsigned int permutation_idx = 0;
-//     pll_unode_t * tree = createTreeRec(succinct_structure, &succinct_idx, node_permutation, &permutation_idx);
-//     assert(succinct_idx == succinct_structure.size());
-//     assert(permutation_idx == node_permutation.size());
-//     return tree;
-// }
-
 pll_unode_t * createLeaf(int index) {
     pll_unode_t * new_leaf = (pll_unode_t *)calloc(1, sizeof(pll_unode_t));
     if (!new_leaf) {
@@ -246,23 +202,6 @@ pll_unode_t * simple_uncompression(sdsl::bit_vector &succinct_structure, sdsl::i
   return root;
 }
 
-// void contractEdgesRec(pll_unode_t * node, unsigned int * edge_idx,
-//         sdsl::int_vector<> &edges_to_contract, unsigned int * edge_to_contract_idx) {
-//   assert(node->next = NULL || node->next->next = node);
-//   if(*edge_idx == edges_to_contract[*edge_to_contract_idx]) {
-//     (*edge_to_contract_idx)++;
-//     contractEdgesRec(node->next, , edges_to_contract, edge_to_contract_idx);
-//     contractEdgesRec(node->next->next, , edges_to_contract, edge_to_contract_idx);
-//     contractEdge(node);
-//   }
-// }
-//
-// pll_unode_t * copyNode(pll_unode_t * node) {
-//     char * copied_label;
-//     strncpy(copied_label, node->label, sizeof(node->label));
-//     return pllmod_utree_create_node(0, 0, copied_label, NULL);
-// }
-
 pll_unode_t * copyTreeRec(const pll_unode_t * original) {
     if(original->next == NULL) {
         // leaf
@@ -359,78 +298,6 @@ void traverseAndDeleteEdges(pll_unode_t * tree, sdsl::int_vector<> &edges_to_con
     }
 }
 
-pll_unode_t * buildSubtreeRec(sdsl::bit_vector &subtrees_succinct, unsigned int * idx) {
-    assert(subtrees_succinct[*idx] != 1);
-    if(subtrees_succinct[*idx] == 0) {
-        if(subtrees_succinct[*idx+1] == 0) {
-            pll_unode_t * new_innernode_0 = pllmod_utree_create_node(0, 0, NULL, NULL);
-            pll_unode_t * new_innernode_1 = pllmod_utree_create_node(0, 0, NULL, NULL);
-            pll_unode_t * new_innernode_2 = pllmod_utree_create_node(0, 0, NULL, NULL);
-
-            new_innernode_0->next = new_innernode_1;
-            new_innernode_1->next = new_innernode_2;
-            new_innernode_2->next = new_innernode_0;
-
-            (*idx)++;
-            pll_unode_t * new_innernode_child_1 = buildSubtreeRec(subtrees_succinct, idx);
-            pll_unode_t * new_innernode_child_2 = buildSubtreeRec(subtrees_succinct, idx);
-            (*idx)++;
-        } else {
-            // sequence 01 found
-            (*idx)++;
-            (*idx)++;
-            return pllmod_utree_create_node(0, 0, NULL, NULL);
-            // TODO: add two childs
-        }
-    }
-}
-
-pll_unode_t * buildSubtree(std::vector<pll_unode_t *> children, sdsl::bit_vector &subtrees_succinct,
-          sdsl::int_vector<> &succinct_permutations) {
-    assert(subtrees_succinct[0] == 0);
-    unsigned int idx = 0;
-}
-
-// void expandTreeRec(pll_unode_t * tree) {
-//   if(tree->next == NULL) {
-//       // leaf
-//   } else {
-//       assert(tree->next != NULL);
-//
-//       if(tree->next->next->next != tree) {
-//           // tree is not binary
-//
-//           // children to array
-//           std::vector<pll_unode_t *> children;
-//           pll_unode_t * temp = tree->next;
-//           while(temp != tree) {
-//             children.push_back(temp);
-//             traverseAndDeleteEdgesRec(temp->back, (*edges_idx)++);
-//             temp = temp->next;
-//             assert(temp != NULL);
-//           }
-//           assert(copy_temp->next == NULL);
-//           copy_temp->next = copy;
-//
-//       } else {
-//           // tree is binary
-//           expandTreeRec(tree->next);
-//           expandTreeRec(tree->next->next);
-//       }
-//
-//       pll_unode_t * temp = tree->next;
-//       while(temp != tree) {
-//
-//         traverseAndDeleteEdgesRec(temp->back, (*edges_idx)++);
-//
-//         temp = temp->next;
-//         assert(temp != NULL);
-//       }
-//       assert(copy_temp->next == NULL);
-//       copy_temp->next = copy;
-//   }
-// }
-
 pll_unode_t * rf_distance_uncompression(const pll_unode_t * predecessor_tree, sdsl::int_vector<> &edges_to_contract,
           sdsl::bit_vector &subtrees_succinct, sdsl::int_vector<> &succinct_permutations) {
 
@@ -484,12 +351,6 @@ pll_unode_t * rf_distance_uncompression(const pll_unode_t * predecessor_tree, sd
       // std::cout << (subtrees_split[i].size() + 2) / 4 << "\n";
       end_idx_succinct = start_idx_succinct + (subtrees_split[i].size() + 2) / 4;
       assert(end_idx_succinct <= succinct_permutations.size());
-
-      // for (size_t j = start_idx_succinct; j < end_idx_succinct; j++) {
-      //     // TODO: Leafs to array
-      //     createLeaf(subtrees_split[i][j]);
-      // }
-
 
       permutations.push_back(std::vector<int> (succinct_permutations.begin() + start_idx_succinct,
                       succinct_permutations.begin() + end_idx_succinct));
@@ -581,29 +442,8 @@ pll_unode_t * rf_distance_uncompression(const pll_unode_t * predecessor_tree, sd
     subtree->back = consensus_subtree_roots[i]->back;
 
     // TODO: free consensus_subtree_roots
-
-    // pll_unode_t * old_root_node_predecessor = internalPredecessor(consensus_subtree_roots[i]);
-    // pll_unode_t * old_root_node_successor = consensus_subtree_roots[i]->next;
-    //
-    // old_root_node_predecessor->next = subtree;
-    // subtree->next = old_root_node_successor;
-
     // TODO: free consensus_subtree_roots[i]
   }
-
-  //printTree(tree);
-
-  // std::vector<pll_unode_t *> subtrees;
-  //
-  // subtrees: subtrees.push_back(createTree(subtree, tree2_order))
-
-  // assert(subtrees.size() == nodes_to_replace.size());
-  // for (size_t i = 0; i < subtrees.size(); i++) {
-  //   // replace the nodes in consensus tree
-  //   nodes_to_replace[i]->back->back = subtrees[i];
-  //   subtrees[i]->back = nodes_to_replace[i]->back;
-  //   free(nodes_to_replace[i]);
-  // }
 
   return tree;
 }
