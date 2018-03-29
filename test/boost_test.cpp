@@ -106,7 +106,7 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree1) {
     load_from_file(permutations_loaded, "rf_permutations.sdsl");
 
     std::vector<int> edges_to_contract {4};
-    std::vector<int> subtrees_succinct {0, 1};
+    std::vector<int> subtrees_succinct {0, 0, 0, 1, 0, 1, 1, 0, 1, 1};
     std::vector<int> permutations {0, 2, 1};
 
     BOOST_CHECK(vectorsEqual(edges_to_contract_loaded, edges_to_contract));
@@ -130,7 +130,7 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree2) {
     load_from_file(permutations_loaded, "rf_permutations.sdsl");
 
     std::vector<int> edges_to_contract {4, 10};
-    std::vector<int> subtrees_succinct {0, 1, 0, 1};
+    std::vector<int> subtrees_succinct {0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1};
     std::vector<int> permutations {0, 2, 1, 0, 2, 1};
 
     BOOST_CHECK(vectorsEqual(edges_to_contract_loaded, edges_to_contract));
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(rf_distance_compression_easy_tree3) {
     load_from_file(permutations_loaded, "rf_permutations.sdsl");
 
     std::vector<int> edges_to_contract {4, 5, 8};
-    std::vector<int> subtrees_succinct {0, 0, 1, 1, 0, 1};
+    std::vector<int> subtrees_succinct {0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 1, 1, 1};
     std::vector<int> permutations {0, 4, 2, 1, 3};
 
     BOOST_CHECK(vectorsEqual(edges_to_contract_loaded, edges_to_contract));

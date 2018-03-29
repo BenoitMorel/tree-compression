@@ -128,11 +128,15 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
           return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
           return_vector_topology.push_back(1);
 
+          return_vector_topology.push_back(0);
           return_vector_order.push_back((intptr_t) tree->next->next->back->data);
+          return_vector_topology.push_back(1);
     } else if(edgeIncidentPresent2[tree->next->next->node_index]) {
           assert(!edgeIncidentPresent2[tree->next->node_index]);
 
+          return_vector_topology.push_back(0);
           return_vector_order.push_back((intptr_t) tree->next->back->data);
+          return_vector_topology.push_back(1);
 
           return_vector_topology.push_back(0);
           std::vector<int> temp_topology;
@@ -148,8 +152,12 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
 
           tasks.push(tree->next->next->back);
           tasks.push(tree->next->back);
+          return_vector_topology.push_back(0);
           return_vector_order.push_back((intptr_t) tree->next->back->data);
+          return_vector_topology.push_back(1);
+          return_vector_topology.push_back(0);
           return_vector_order.push_back((intptr_t) tree->next->next->back->data);
+          return_vector_topology.push_back(1);
     }
   }
   return std::make_tuple(return_vector_topology, return_vector_order);
@@ -552,44 +560,45 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
       std::vector<int> subtree;
       std::vector<int> leaf_order;
       std::tie(subtree, leaf_order) = findRFSubtrees(tasks, edgeIncidentPresent2);
-      if(!subtree.empty()) {
-          subtrees.push_back(subtree);
+
+      if(!subtree.empty() && leaf_order.size() > 2) {
+          std::vector<int> subtree_extended;
+          subtree_extended.push_back(0);
+          subtree_extended.insert(subtree_extended.end(), subtree.begin(), subtree.end());
+          subtree_extended.push_back(1);
+          subtrees.push_back(subtree_extended);
           permutations.push_back(leaf_order);
+
+          // std::cout << "\n\n\n\nsubtree_extended: ";
+          // for (auto x: subtree_extended) {
+          //     std::cout << x;
+          // }
+          // std::cout << "\nleaf_order: ";
+          // for (auto x: leaf_order) {
+          //     std::cout << x << " ";
+          // }
       }
   }
 
-  if(!subtrees.empty()) {
-    if(flags & PRINT_COMPRESSION_STRUCTURES) {
-      std::cout << "\nSubtrees: \n";
-    }
-    int subtree_elements = 0;
-    for (std::vector<int> i: subtrees) {
-      subtree_elements += i.size();
-      if(flags & PRINT_COMPRESSION_STRUCTURES) {
-        for (auto j : i) {
-          std::cout << j;
-        }
-        std::cout << "\n";
-      }
+
+
+    std::vector<int> permutations_index(permutations.size(), 0);
+    for (int i = 0 ; i != permutations_index.size() ; i++) {
+        permutations_index[i] = i;
     }
 
-    size_t subtrees_index = 0;
-    // subtrees_succinct stores all subtrees to insert into the consensus tree
-    sdsl::bit_vector subtrees_succinct(subtree_elements, 1);
-    for (std::vector<int> i: subtrees) {
-      for (auto j : i) {
-        subtrees_succinct[subtrees_index] = j;
-        subtrees_index++;
-      }
-    }
-    assert(subtrees_index = subtrees_succinct.size());
+    std::sort(permutations_index.begin(), permutations_index.end(),
+                                        [&](const int& a, const int& b) {
+                                              return (arraySumComp(permutations[a], permutations[b]));
+                                          });
 
-    auto size_subtrees = sdsl::size_in_bytes(subtrees_succinct);
+    // std::cout << "\npermutations_index: \n";
+    // for(auto x: permutations_index) {
+    //   std::cout << x << " ";
+    // }
+    // std::cout << "\n";
+    std::vector<int> permutations_index2;
 
-    if(flags & PRINT_COMPRESSION_STRUCTURES) {
-      std::cout << "\nSuccinct subtree representation: " << subtrees_succinct << "\n";
-      std::cout << "\tcompressed size: " << size_subtrees << " bytes\n";
-    }
 
     std::sort(permutations.begin(), permutations.end(), arraySumComp);
 
@@ -630,12 +639,24 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
               std::cout <<  '\n';
             }
             normalized_permutations.push_back(findPermutation(permutations[temp_index], perm));
+
+            permutations_index2.push_back(temp_index);
+            //std::cout << "temp_index: " << temp_index << "\n";
+
             break;
           }
           temp_index++;
         }
         assert(temp_index < permutations.size()); // no matching permutation found
     }
+
+
+    // std::cout << "\npermutations_index2: \n";
+    // for(auto x: permutations_index2) {
+    //   std::cout << x << " ";
+    // }
+    // std::cout << "\n";
+
 
     size_t permutation_index = 0;
     // succinct_permutations stores all permutations according to the subtrees, split by a "0"
@@ -648,6 +669,65 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
       }
     }
     assert(permutation_index = succinct_permutations.size());
+
+
+
+    if(!subtrees.empty()) {
+      if(flags & PRINT_COMPRESSION_STRUCTURES) {
+        std::cout << "\nSubtrees: \n";
+      }
+      int subtree_elements = 0;
+      //for (std::vector<int> i: subtrees) {
+      for (size_t i = 0; i < subtrees.size(); i++) {
+        subtree_elements += subtrees[i].size();
+        if(flags & PRINT_COMPRESSION_STRUCTURES) {
+          for (auto j : subtrees[i]) {
+            std::cout << j;
+          }
+          std::cout << "\n";
+        }
+      }
+
+
+      // reorder subtrees
+      std::vector<std::vector<int>> subtrees_perms_1 (subtrees.size());
+      for (size_t i = 0; i < subtrees_perms_1.size(); i++) {
+        subtrees_perms_1[i] = subtrees[permutations_index[i]];
+      }
+
+      std::vector<std::vector<int>> subtrees_perms_2 (subtrees.size());
+      for (size_t i = 0; i < subtrees_perms_2.size(); i++) {
+        subtrees_perms_2[i] = subtrees_perms_1[permutations_index2[i]];
+      }
+      //std::cout << "------------\n";
+      for (size_t i = 0; i < subtrees.size(); i++) {
+        if(flags & PRINT_COMPRESSION_STRUCTURES) {
+          for (auto j : subtrees_perms_2[i]) {
+            std::cout << j;
+          }
+          std::cout << "\n";
+        }
+      }
+
+      subtrees = subtrees_perms_2;
+
+      size_t subtrees_index = 0;
+      // subtrees_succinct stores all subtrees to insert into the consensus tree
+      sdsl::bit_vector subtrees_succinct(subtree_elements, 1);
+      for (std::vector<int> i: subtrees) {
+        for (auto j : i) {
+          subtrees_succinct[subtrees_index] = j;
+          subtrees_index++;
+        }
+      }
+      assert(subtrees_index = subtrees_succinct.size());
+
+      auto size_subtrees = sdsl::size_in_bytes(subtrees_succinct);
+
+      if(flags & PRINT_COMPRESSION_STRUCTURES) {
+        std::cout << "\nSuccinct subtree representation: " << subtrees_succinct << "\n";
+        std::cout << "\tcompressed size: " << size_subtrees << " bytes\n";
+      }
 
     // TODO: better compression?
     sdsl::util::bit_compress(succinct_permutations);
