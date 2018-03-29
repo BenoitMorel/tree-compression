@@ -5,8 +5,8 @@
 
 void printNode(pll_unode_t * node) {
   assert(node != NULL);
-  printf("Node Index: %i, PMatrix Index: %i, Label: %s, Length: %f\n",
-          node->node_index, node->pmatrix_index, node->label, node->length);
+  printf("Node Index: %i, PMatrix Index: %i, Label: %s, Length: %f, Data: %i\n",
+          node->node_index, node->pmatrix_index, node->label, node->length, (intptr_t) node->data);
 }
 
 pll_unode_t * searchRoot(pll_utree_t * tree) {
@@ -46,12 +46,13 @@ void printTreeRec(pll_unode_t * tree, std::string tabs) {
 }
 
 void printTree(pll_unode_t * tree) {
-  assert(tree->next == NULL);
-  assert(tree->back != NULL);
 
-  printNode(tree);
-  printTreeRec(tree->back, "\t");
-
+  if(tree->next == NULL) {
+    printNode(tree);
+    printTreeRec(tree->back, "\t");
+  } else {
+    printTreeRec(tree, "");
+  }
 }
 
 int setTreeRec(pll_unode_t * tree) {
