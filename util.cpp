@@ -241,16 +241,18 @@ void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vec
  */
 pll_unode_t * internalPredecessor(pll_unode_t * node) {
   pll_unode_t * predecessor = node;
-  while(predecessor->next->node_index != node->node_index) {
+  while(predecessor->next != node) {
     predecessor = predecessor->next;
   }
-  assert(predecessor->next->node_index == node->node_index);
+  assert(predecessor->next == node);
   return predecessor;
 }
 
 void contractEdge(pll_unode_t * node) {
   assert(node != NULL);
   assert(node->back != NULL);
+  assert(node->next != NULL); // don't contract leafs
+
   pll_unode_t * node_back_predecessor = internalPredecessor(node->back);
   pll_unode_t * node_back_successor = node->back->next;
   pll_unode_t * node_predecessor = internalPredecessor(node);
@@ -381,6 +383,46 @@ void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms)
   traverseConsensusRec(tree->back, perms);
 }
 
+void traverseConsensusRec(pll_unode_t * tree, std::vector<pll_unode_t *> &subtree_roots,
+                  std::vector<std::vector<pll_unode_t *>> &children) {
+  assert(tree != NULL);
+  if(tree->next == NULL) {
+    // leaf
+  } else {
+    // inner node
+    assert(tree->next != NULL);
+
+    int ctr = 1;
+    std::vector<pll_unode_t *> children_node;
+
+    pll_unode_t * temp = tree->next;
+    while(temp != tree) {
+      traverseConsensusRec(temp->back, subtree_roots, children);
+
+      children_node.push_back(temp);
+
+      temp = temp->next;
+
+      assert(temp != NULL);
+      ctr++;
+    }
+
+    if(ctr>3){
+        subtree_roots.push_back(tree);
+        children.push_back(children_node);
+    }
+  }
+}
+
+void traverseConsensus(pll_unode_t * tree, std::vector<pll_unode_t *> &subtree_roots,
+                      std::vector<std::vector<pll_unode_t *>> &perms) {
+  assert(tree->next == NULL);
+  assert(tree->back != NULL);
+
+  traverseConsensusRec(tree->back, subtree_roots,  perms);
+
+  assert(subtree_roots.size() == perms.size());
+}
 
 void getNonBinaryNodesDFSRec(pll_unode_t * tree, std::vector<pll_unode_t *> &nodes) {
   assert(tree != NULL);
@@ -471,10 +513,12 @@ bool subnodesEqual(pll_unode_t * subnode1, pll_unode_t * subnode2) {
       printTreeEqualError("labels of subnodes are not identical", subnode1, subnode2);
       return false;
     }
-    if(subnode1->length != subnode2->length) {
-      printTreeEqualError("lengths of subnodes are not identical", subnode1, subnode2);
-      return false;
-    }
+    //TODO: undo
+    // if(subnode1->length != subnode2->length) {
+    //   printTreeEqualError("lengths of subnodes are not identical", subnode1, subnode2);
+    //   return false;
+    // }
+    return true;
 }
 
 bool treesEqual(pll_unode_t * node1, pll_unode_t * node2) {

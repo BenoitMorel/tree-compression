@@ -95,6 +95,18 @@ double dec(uint64_t z, size_t precision);
  */
 void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<int>> &perms);
 
+
+// /**
+//  * Traverses the consensus tree, searches for nodes with outdegree > 2 and appends
+//  * the order of the children to a vector.
+//  * @param tree  root of the consensus tree
+//  * @param perms vector to store permutations of children of nodes with outdegree > 2
+//  */
+// void traverseConsensus(pll_unode_t * tree, std::vector<std::vector<pll_unode_t *>> &children);
+
+void traverseConsensus(pll_unode_t * tree, std::vector<pll_unode_t *> &subtree_roots,
+                      std::vector<std::vector<pll_unode_t *>> &perms);
+
 /**
  * Check if vector a is a permutation of vector b, i.e. check if both vectors
  * contain the same elements but in a different order.
@@ -112,3 +124,5 @@ bool isPermutation(const std::vector<int> &a, const std::vector<int> &b);
 std::vector<pll_unode_t *> getNonBinaryNodesDFS(pll_unode_t * tree);
 
 bool treesEqual(pll_unode_t * tree1, pll_unode_t * tree2);
+
+pll_unode_t * internalPredecessor(pll_unode_t * node);
