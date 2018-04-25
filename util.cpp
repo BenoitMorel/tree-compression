@@ -257,24 +257,6 @@ void contractEdge(pll_unode_t * node) {
   node_back_predecessor->next = node_successor;
 }
 
-bool saveArray( const double* pdata, size_t length, const std::string& file_path ) {
-    std::ofstream os(file_path.c_str(), std::ios::binary | std::ios::out);
-    if ( !os.is_open() )
-        return false;
-    os.write(reinterpret_cast<const char*>(pdata), std::streamsize(length*sizeof(double)));
-    os.close();
-    return true;
-}
-
-bool loadArray( double* pdata, size_t length, const std::string& file_path) {
-    std::ifstream is(file_path.c_str(), std::ios::binary | std::ios::in);
-    if ( !is.is_open() )
-        return false;
-    is.read(reinterpret_cast<char*>(pdata), std::streamsize(length*sizeof(double)));
-    is.close();
-    return true;
-}
-
 void traverseTreeRec(pll_unode_t * tree, void (*leaf_func)(pll_unode_t *),
             void (*inner_node_func)(pll_unode_t *)) {
   assert(tree != NULL);
