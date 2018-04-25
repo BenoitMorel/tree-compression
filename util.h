@@ -5,6 +5,8 @@
 
 #include <assert.h>
 
+std::string toNewick(pll_unode_t * tree);
+
 /*
  * Prints out a given pll_unode_t on the console.
  */

@@ -2,6 +2,43 @@
 
 #include "util.h"
 
+std::string toNewickRec(pll_unode_t * tree) {
+  assert(tree != NULL);
+
+  std::stringstream ss;
+  if(tree->next == NULL) {
+    //leaf
+    ss << tree->label << ":" << tree->length;
+  } else {
+    assert(tree->next->next->next == tree); // tree is binary
+    ss << "(" << toNewickRec(tree->next->back) << "," << toNewickRec(tree->next->next->back)
+               << "):" << tree->length;
+  }
+  return ss.str();
+}
+
+std::string toNewick(pll_unode_t * tree) {
+  assert(tree != NULL);
+
+  if(tree->next == NULL) {
+    assert(tree->back != NULL);
+    assert(tree->back->next != NULL);
+    assert(tree->back->next->next != NULL);
+
+    std::stringstream ss;
+
+    return "(" + toNewickRec(tree) + "," + toNewickRec(tree->back->next->back) + "," +
+                      toNewickRec(tree->back->next->next->back) + ");";
+  } else {
+    assert(tree->next != NULL);
+    assert(tree->next->next != NULL);
+
+    std::stringstream ss;
+
+    return "(" + toNewickRec(tree->back) + "," + toNewickRec(tree->next->back) + "," +
+                      toNewickRec(tree->next->next->back) + ");";
+  }
+}
 
 void printNode(pll_unode_t * node) {
   assert(node != NULL);
