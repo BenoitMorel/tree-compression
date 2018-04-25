@@ -556,10 +556,96 @@ bool treesEqualRec(pll_unode_t * node1, pll_unode_t * node2) {
     }
 
     if(subnodes_in_node1 != subnodes_in_node2) {
-      std::cout << "different amount of subnodes";
+      printTreeEqualError("different amount of subnodes", node1, node2);
       return false;
     }
 
+    if(!subnodesEqual(node1, node2)) {
+      return false;
+    }
+    pll_unode_t * temp1 = node1->next;
+    pll_unode_t * temp2 = node2->next;
+    while(temp1 != node1) {
+      if(!subnodesEqual(temp1, temp2)) {
+          return false;
+      }
+      if(!treesEqualRec(temp1->back, temp2->back)) {
+          return false;
+      }
+      temp1 = temp1->next;
+      temp2 = temp2->next;
+      assert(temp != NULL);
+    }
+    return true;
+}
+
+bool treesEqual(pll_unode_t * node1, pll_unode_t * node2) {
+    if(node1 == NULL) {
+      if(node2 == NULL) {
+        return true;
+      } else {
+        printTreeEqualError("node1 is NULL, node 2 not", node1, node2);
+        return false;
+      }
+    }
+
+    if(node2 == NULL) {
+      if(node1 == NULL) {
+        return true;
+      } else {
+        printTreeEqualError("node2 is NULL, node 1 not", node1, node2);
+        return false;
+      }
+    }
+
+    if(node1->next == NULL) {
+      if (node2->next == NULL) {
+        if(!subnodesEqual(node1, node2)) {
+            return false;
+        }
+        if(!treesEqualRec(node1->back, node2->back)) {
+            return false;
+        }
+      } else {
+        printTreeEqualError("node2 has more subnodes than node1", node1, node2);
+        return false;
+      }
+    }
+
+    if(node2->next == NULL) {
+      if (node1->next == NULL) {
+        if(!subnodesEqual(node1, node2)) {
+            return false;
+        }
+        if(!treesEqualRec(node1->back, node2->back)) {
+            return false;
+        }
+      } else {
+        printTreeEqualError("node1 has more subnodes than node1", node1, node2);
+        return false;
+      }
+    }
+
+    int subnodes_in_node1 = 1;
+    pll_unode_t * temp = node1->next;
+    while(temp != node1) {
+      subnodes_in_node1++;
+      temp = temp->next;
+      assert(temp != NULL);
+    }
+
+    int subnodes_in_node2 = 1;
+    temp = node2->next;
+    while(temp != node2) {
+      subnodes_in_node2++;
+      temp = temp->next;
+      assert(temp != NULL);
+    }
+
+    if(subnodes_in_node1 != subnodes_in_node2) {
+      printTreeEqualError("different amount of subnodes", node1, node2);
+      return false;
+    }
 
     if(!subnodesEqual(node1, node2)) {
       return false;
