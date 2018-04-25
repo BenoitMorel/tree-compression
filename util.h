@@ -90,10 +90,6 @@ void pll_utree_destroy_consensus(pll_utree_t * tree);
 void traverseTree(pll_unode_t * root, void (*leaf_func)(pll_unode_t *),
             void (*inner_node_func)(pll_unode_t *));
 
-uint64_t enc(double x, size_t precision);
-
-double dec(uint64_t z, size_t precision);
-
 /**
  * Traverses the consensus tree, searches for nodes with outdegree > 2 and appends
  * the order of the children to a vector.
