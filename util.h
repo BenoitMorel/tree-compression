@@ -24,6 +24,11 @@ pll_unode_t * searchRoot(pll_utree_t * tree);
 void printTree(pll_unode_t * tree);
 
 /*
+ * Prints out a given tree descending from the given node on the console.
+ */
+void printTreeDescending(pll_unode_t * tree);
+
+/*
  * Traverses the given tree, storing for each node in the (void*) data
  * field the number of the smallest leaf underneath this node.
  * After this method has been called, the tree can be traversed such a way

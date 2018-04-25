@@ -90,6 +90,13 @@ void printTree(pll_unode_t * tree) {
   }
 }
 
+void printTreeDescending(pll_unode_t * tree) {
+    printNode(tree);
+    if(tree->next != NULL) {
+        printTreeRec(tree->back, "\t");
+    }
+}
+
 int setTreeRec(pll_unode_t * tree) {
   assert(tree != NULL);
   if(tree->next == NULL) {
