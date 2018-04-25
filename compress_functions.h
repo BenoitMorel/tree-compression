@@ -44,7 +44,7 @@ enum Flags{
  * @return                         value < 0 in case of an eŕror
  */
 int simple_compression(const char * tree_file, const char * succinct_structure_file,
-        const char * node_permutation_file, int flags);
+        const char * node_permutation_file, const char * branch_lengths_file, int flags);
 
 /**
  * Takes two tree files and computes a compression between the two
@@ -58,6 +58,7 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
  * @param flags                  flags
  * @return                       value < 0 in case of an eŕror
  */
-int rf_distance_compression(const char * tree1_file, const char * tree2_file,
-        const char * edges_to_contract_file, const char * subtrees_succinct_file,
-        const char * node_permutations_file, int flags);
+ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
+         const char * edges_to_contract_file, const char * subtrees_succinct_file,
+         const char * node_permutations_file, const char * branch_lengths_consensus_file,
+         const char * branch_lengths_non_consensus, int flags);

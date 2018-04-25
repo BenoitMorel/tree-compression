@@ -63,7 +63,6 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
   // write stuctures to file
   store_to_file(succinct_structure, succinct_structure_file);
   store_to_file(node_permutation, node_permutation_file);
-  saveArray(&branch_lengths[0], branch_lengths.size(), "output_files/branch_lengths.txt");
 
   if(flags & PRINT_COMPRESSION) {
     std::cout << "Simple compression size: " << size_topology
@@ -79,11 +78,128 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
   return 0;
 }
 
-std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2,
+void commonBranchesOrderedRec(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2, std::vector<double> &branches) {
+  assert(tree != NULL);
+
+  if(!edgeIncidentPresent2[tree->node_index]) {
+    branches.push_back(tree->length);
+  }
+  if(tree->next == NULL) {
+    // leaf
+  } else {
+    // inner node
+    assert(tree->next != NULL);
+    assert(tree->next->next->next == tree);
+
+    // if(edgeIncidentPresent2[tree->next->node_index]) {
+    //     branches.push_back(tree->next->length);
+    // }
+    commonBranchesOrderedRec(tree->next->back, edgeIncidentPresent2, branches);
+    // if(edgeIncidentPresent2[tree->next->next->node_index]) {
+    //     branches.push_back(tree->next->next->length);
+    // }
+    commonBranchesOrderedRec(tree->next->next->back, edgeIncidentPresent2, branches);
+
+  }
+}
+
+std::vector<double> commonBranchesOrdered(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2) {
+    std::vector<double> branches;
+    branches.push_back(0);
+    commonBranchesOrderedRec(tree, edgeIncidentPresent2, branches);
+    return branches;
+}
+
+
+
+void commonBranchesOrderedCompareRec(pll_unode_t * tree, pll_unode_t * consensus, const std::vector<bool> &edgeIncidentPresent2, std::vector<double> &branches) {
+  assert(tree != NULL);
+  assert(consensus != NULL);
+
+  if(tree->next == NULL) {
+      assert(consensus->next == NULL);
+      return;
+  }
+
+  assert(tree->next->next->next == tree); // tree is binary
+
+  int i = 1;
+  pll_unode_t * temp = consensus->next;
+  while(temp != consensus) {
+      temp = temp->next;
+      i++;
+  }
+
+  if(i > 3) {
+      int x = (intptr_t) tree->next->data;
+      int y = (intptr_t) tree->next->next->data;
+      pll_unode_t * subtree1;
+      pll_unode_t * subtree2;
+
+      pll_unode_t * temp = consensus->next;
+      if((intptr_t) temp->data == x) {
+          subtree1 = temp;
+      }
+      if((intptr_t) temp->data == y) {
+          subtree2 = temp;
+      }
+      while(temp != consensus) {
+          if((intptr_t) temp->data == x) {
+              subtree1 = temp;
+          }
+          if((intptr_t) temp->data == y) {
+              subtree2 = temp;
+          }
+          temp = temp->next;
+      }
+      assert(subtree1 != NULL);
+      assert(subtree2 != NULL);
+
+      if(!edgeIncidentPresent2[tree->next->node_index]) {
+          assert((intptr_t) tree->next->data == (intptr_t) subtree1->data);
+          branches.push_back(tree->next->length - subtree1->length);
+          commonBranchesOrderedCompareRec(tree->next->back, subtree1->back, edgeIncidentPresent2, branches);
+      } else {
+          assert((intptr_t) tree->next->data == (intptr_t) subtree1->data);
+          commonBranchesOrderedCompareRec(tree->next->back, consensus, edgeIncidentPresent2, branches);
+      }
+
+      if(!edgeIncidentPresent2[tree->next->next->node_index]) {
+          assert((intptr_t) tree->next->next->data == (intptr_t) subtree2->data);
+          branches.push_back(tree->next->next->length - subtree2->length);
+          commonBranchesOrderedCompareRec(tree->next->next->back, subtree2->back, edgeIncidentPresent2, branches);
+      } else {
+          assert((intptr_t) tree->next->next->data == (intptr_t) subtree2->data);
+          commonBranchesOrderedCompareRec(tree->next->next->back, consensus, edgeIncidentPresent2, branches);
+      }
+
+  } else {
+      assert(i == 3);
+      assert((intptr_t) tree->next->data == (intptr_t) consensus->next->data);
+      assert((intptr_t) tree->next->next->data == (intptr_t) consensus->next->next->data);
+      branches.push_back(tree->next->length - consensus->next->length);
+      commonBranchesOrderedCompareRec(tree->next->back, consensus->next->back, edgeIncidentPresent2, branches);
+      branches.push_back(tree->next->next->length - consensus->next->next->length);
+      commonBranchesOrderedCompareRec(tree->next->next->back, consensus->next->next->back, edgeIncidentPresent2, branches);
+  }
+}
+
+std::vector<double> commonBranchesOrderedCompare(pll_unode_t * tree, pll_unode_t * consensus, const std::vector<bool> &edgeIncidentPresent2) {
+    std::vector<double> branches;
+    branches.push_back(0);
+    branches.push_back(tree->length - consensus->length);
+    commonBranchesOrderedCompareRec(tree, consensus, edgeIncidentPresent2, branches);
+    return branches;
+}
+
+
+std::tuple<std::vector<int>, std::vector<int>, std::vector<double>> findRFSubtreesRecL(pll_unode_t * tree, const std::vector<bool> &edgeIncidentPresent2,
             std::stack<pll_unode_t *> &tasks) {
   assert(tree != NULL);
   std::vector<int> return_vector_topology;
   std::vector<int> return_vector_order;
+  std::vector<double> return_branches;
+
   if(tree->next == NULL) {
     // leaf; edge incident is always present in both trees
     //std::cout << "Leaf: " << tree->node_index << "\t    Edge incident present: " << edgeIncidentPresent2[tree->node_index] << "\n";
@@ -102,11 +218,13 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
     if(edgeIncidentPresent2[tree->next->node_index] && edgeIncidentPresent2[tree->next->next->node_index]) {
           std::vector<int> temp_topology_right;
           std::vector<int> temp_order_right;
-          std::tie (temp_topology_right, temp_order_right) = findRFSubtreesRec(tree->next->next->back, edgeIncidentPresent2, tasks);
+          std::vector<double> temp_branches_right;
+          std::tie (temp_topology_right, temp_order_right, temp_branches_right) = findRFSubtreesRecL(tree->next->next->back, edgeIncidentPresent2, tasks);
 
           std::vector<int> temp_topology_left;
           std::vector<int> temp_order_left;
-          std::tie (temp_topology_left, temp_order_left) = findRFSubtreesRec(tree->next->back, edgeIncidentPresent2, tasks);
+          std::vector<double> temp_branches_left;
+          std::tie (temp_topology_left, temp_order_left, temp_branches_left) = findRFSubtreesRecL(tree->next->back, edgeIncidentPresent2, tasks);
 
           return_vector_topology.push_back(0);
           return_vector_topology.insert(return_vector_topology.end(), temp_topology_left.begin(), temp_topology_left.end());
@@ -116,6 +234,10 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
           return_vector_topology.insert(return_vector_topology.end(), temp_topology_right.begin(), temp_topology_right.end());
           return_vector_order.insert(return_vector_order.end(), temp_order_right.begin(), temp_order_right.end());
           return_vector_topology.push_back(1);
+          return_branches.push_back(tree->next->back->length);
+          return_branches.insert(return_branches.end(), temp_branches_left.begin(), temp_branches_left.end());
+          return_branches.push_back(tree->next->next->back->length);
+          return_branches.insert(return_branches.end(), temp_branches_right.begin(), temp_branches_right.end());
     } else if(edgeIncidentPresent2[tree->next->node_index]) {
           assert(!edgeIncidentPresent2[tree->next->next->node_index]);
 
@@ -124,7 +246,8 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
           return_vector_topology.push_back(0);
           std::vector<int> temp_topology;
           std::vector<int> temp_order;
-          std::tie (temp_topology, temp_order) = findRFSubtreesRec(tree->next->back, edgeIncidentPresent2, tasks);
+          std::vector<double> temp_branches;
+          std::tie (temp_topology, temp_order, temp_branches) = findRFSubtreesRecL(tree->next->back, edgeIncidentPresent2, tasks);
           return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
           return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
           return_vector_topology.push_back(1);
@@ -132,6 +255,8 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
           return_vector_topology.push_back(0);
           return_vector_order.push_back((intptr_t) tree->next->next->back->data);
           return_vector_topology.push_back(1);
+          return_branches.push_back(tree->next->back->length);
+          return_branches.insert(return_branches.end(), temp_branches.begin(), temp_branches.end());
     } else if(edgeIncidentPresent2[tree->next->next->node_index]) {
           assert(!edgeIncidentPresent2[tree->next->node_index]);
 
@@ -142,10 +267,13 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
           return_vector_topology.push_back(0);
           std::vector<int> temp_topology;
           std::vector<int> temp_order;
-          std::tie (temp_topology, temp_order) = findRFSubtreesRec(tree->next->next->back, edgeIncidentPresent2, tasks);
+          std::vector<double> temp_branches;
+          std::tie (temp_topology, temp_order, temp_branches) = findRFSubtreesRecL(tree->next->next->back, edgeIncidentPresent2, tasks);
           return_vector_topology.insert(return_vector_topology.end(), temp_topology.begin(), temp_topology.end());
           return_vector_order.insert(return_vector_order.end(), temp_order.begin(), temp_order.end());
           return_vector_topology.push_back(1);
+          return_branches.push_back(tree->next->next->back->length);
+          return_branches.insert(return_branches.end(), temp_branches.begin(), temp_branches.end());
 
           tasks.push(tree->next->back);
     } else {
@@ -161,7 +289,7 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
           return_vector_topology.push_back(1);
     }
   }
-  return std::make_tuple(return_vector_topology, return_vector_order);
+  return std::make_tuple(return_vector_topology, return_vector_order, return_branches);
 }
 
 /**
@@ -172,20 +300,21 @@ std::tuple<std::vector<int>, std::vector<int>> findRFSubtreesRec(pll_unode_t * t
  * @param edgeIncidentPresent2 vector indicating which edges are are present in
  * both trees (edges of the consensus tree)
  */
-std::tuple<std::vector<int>, std::vector<int>> findRFSubtrees(std::stack<pll_unode_t *> &tasks,
+std::tuple<std::vector<int>, std::vector<int>, std::vector<double>> findRFSubtreesL(std::stack<pll_unode_t *> &tasks,
                       const std::vector<bool> &edgeIncidentPresent2) {
   std::vector<int> return_topology;
   std::vector<int> return_order;
+  std::vector<double> return_branches;
   if(tasks.empty()) {
-    return std::make_tuple(return_topology, return_order);
+    return std::make_tuple(return_topology, return_order, return_branches);
   }
   pll_unode_t * tree = tasks.top();
   tasks.pop();
 
   if(tree == NULL) {
-    return std::make_tuple(return_topology, return_order);
+    return std::make_tuple(return_topology, return_order, return_branches);
   } else {
-      return findRFSubtreesRec(tree, edgeIncidentPresent2, tasks);
+      return findRFSubtreesRecL(tree, edgeIncidentPresent2, tasks);
   }
 }
 
@@ -208,9 +337,8 @@ bool innerNodeCompare_(pll_unode_t * node1, pll_unode_t * node2) {
 void consensusDiffRec(pll_utree_t * tree1, pll_utree_t * tree2, pll_unode_t * node,
               unsigned int * bl_idx, std::vector<double> &branch_lengths) {
   assert(node != NULL);
+
   double diff = tree2->nodes[node->pmatrix_index]->length - node->length;
-  //std::cout << "Length: " << node->length << "\tDiff: " << diff
-  //          <<  "\tPercent: " << (diff / node->length) << "\n";
 
   branch_lengths[*bl_idx] = diff;
   (*bl_idx)++;
@@ -246,6 +374,7 @@ void consensusDiff(pll_utree_t * tree1, pll_utree_t * tree2, pll_unode_t * node,
   assert(atoi(node->label) == 1);
   unsigned int bl_idx = 1;
   consensusDiffRec(tree1, tree2, node->back, &bl_idx, branch_lengths);
+  assert(bl_idx == branch_lengths.size());
 }
 
 void nonConsensusBranchLengthsRec(pll_unode_t * tree, const std::vector<bool> node_incident, std::vector<double> &branch_lengths) {
@@ -280,30 +409,6 @@ void nonConsensusBranchLengths(pll_unode_t * root, const std::vector<bool> node_
   assert(node_incident[root->back->node_index] == true);
 
   nonConsensusBranchLengthsRec(root->back, node_incident, branch_lengths);
-}
-
-/**
- * compress branch lengts
- * @param  branch_lengths branch lengths to compress
- * @return                size of the compression
- */
-int compressBranchLengths(std::vector<double> branch_lengths) {
-  std::vector<uint64_t> vec;
-
-  uint64_t z;
-  for (size_t i = 0; i < branch_lengths.size(); i++) {
-    z = enc(branch_lengths[i], 9);
-    vec.push_back(z);
-  }
-  uint64_t max_number = *max_element(vec.begin(), vec.end());
-  uint32_t width = sdsl::bits::hi(max_number);
-  sdsl::int_vector<0> seq(branch_lengths.size(), 0, width);
-  for (size_t i=0; i<vec.size(); ++i) {
-       seq[i] = vec[i];
-  }
-  sdsl::wt_int<sdsl::rrr_vector<63>> wt;
-  sdsl::construct_im(wt, seq);
-  return sdsl::size_in_bytes(wt);
 }
 
 /**
@@ -348,7 +453,8 @@ std::vector<int> findPermutation(const std::vector<int> &a, const std::vector<in
 
 int rf_distance_compression(const char * tree1_file, const char * tree2_file,
         const char * edges_to_contract_file, const char * subtrees_succinct_file,
-        const char * node_permutations_file, int flags) {
+        const char * node_permutations_file, const char * branch_lengths_consensus_file,
+        const char * branch_lengths_non_consensus_file, int flags) {
 
   /* tree properties */
   pll_utree_t * tree1 = NULL,
@@ -589,19 +695,9 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
           subtree_extended.push_back(1);
           subtrees.push_back(subtree_extended);
           permutations.push_back(leaf_order);
-
-          // std::cout << "\n\n\n\nsubtree_extended: ";
-          // for (auto x: subtree_extended) {
-          //     std::cout << x;
-          // }
-          // std::cout << "\nleaf_order: ";
-          // for (auto x: leaf_order) {
-          //     std::cout << x << " ";
-          // }
+          branch_lengths.push_back(branches);
       }
   }
-
-
 
     std::vector<int> permutations_index(permutations.size(), 0);
     for (int i = 0 ; i != permutations_index.size() ; i++) {
@@ -613,11 +709,6 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
                                               return (arraySumComp(permutations[a], permutations[b]));
                                           });
 
-    // std::cout << "\npermutations_index: \n";
-    // for(auto x: permutations_index) {
-    //   std::cout << x << " ";
-    // }
-    // std::cout << "\n";
     std::vector<int> permutations_index2;
 
 
@@ -662,7 +753,6 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
             normalized_permutations.push_back(findPermutation(permutations[temp_index], perm));
 
             permutations_index2.push_back(temp_index);
-            //std::cout << "temp_index: " << temp_index << "\n";
 
             break;
           }
@@ -670,14 +760,6 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
         }
         assert(temp_index < permutations.size()); // no matching permutation found
     }
-
-
-    // std::cout << "\npermutations_index2: \n";
-    // for(auto x: permutations_index2) {
-    //   std::cout << x << " ";
-    // }
-    // std::cout << "\n";
-
 
     size_t permutation_index = 0;
     // succinct_permutations stores all permutations according to the subtrees, split by a "0"
@@ -698,17 +780,11 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
         std::cout << "\nSubtrees: \n";
       }
       int subtree_elements = 0;
-      //for (std::vector<int> i: subtrees) {
       for (size_t i = 0; i < subtrees.size(); i++) {
         subtree_elements += subtrees[i].size();
         if(flags & PRINT_COMPRESSION_STRUCTURES) {
-          for (auto j : subtrees[i]) {
-            std::cout << j;
-          }
-          std::cout << "\n";
         }
       }
-
 
       // reorder subtrees
       std::vector<std::vector<int>> subtrees_perms_1 (subtrees.size());
@@ -720,7 +796,6 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
       for (size_t i = 0; i < subtrees_perms_2.size(); i++) {
         subtrees_perms_2[i] = subtrees_perms_1[permutations_index2[i]];
       }
-      //std::cout << "------------\n";
       for (size_t i = 0; i < subtrees.size(); i++) {
         if(flags & PRINT_COMPRESSION_STRUCTURES) {
           for (auto j : subtrees_perms_2[i]) {
