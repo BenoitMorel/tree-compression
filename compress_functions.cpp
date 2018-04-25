@@ -1,7 +1,8 @@
 #include "compress_functions.h"
+#include "datastructure_compression_functions.h"
 
 int simple_compression(const char * tree_file, const char * succinct_structure_file,
-        const char * node_permutation_file, int flags) {
+        const char * node_permutation_file, const char * branch_lengths_file, int flags) {
 
   /* tree properties */
   pll_utree_t * tree = NULL;
@@ -43,7 +44,7 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
   auto size_node_permutation = sdsl::size_in_bytes(node_permutation);
 
   // TODO: compress branches
-  auto size_branches = branch_lengths.size() * 8;
+  auto size_branches = writeDoubleVector(branch_lengths, branch_lengths_file);
 
   if (flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "Succinct representation: " << succinct_structure << "\n";
@@ -474,13 +475,20 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
     }
   }
 
-  std::vector<double> non_consensus_branch_lengths;
-  nonConsensusBranchLengths(root2, node_incident, non_consensus_branch_lengths);
+  // std::vector<double> non_consensus_branch_lengths;
+  // nonConsensusBranchLengths(root2, node_incident, non_consensus_branch_lengths);
+  //
+  // std::cout << "non_consensus_branch_lengths: ";
+  // for (auto nbl: non_consensus_branch_lengths) {
+  //   std::cout << nbl << " ";
+  // }
+  // std::cout << '\n';
+  //
+  // auto size_non_consensus_branch_lengths = compressBranchLengthsAndStore(non_consensus_branch_lengths, branch_lengths_non_consensus_file);
 
-  auto size_compressed_non_consensus_branch_lengths = compressBranchLengths(non_consensus_branch_lengths);
   // take minimum
   //auto size_non_consensus_branch_lengths = (size_compressed_non_consensus_branch_lengths < (non_consensus_branch_lengths.size()*8) ? size_compressed_non_consensus_branch_lengths : (non_consensus_branch_lengths.size()*8));
-  auto size_non_consensus_branch_lengths = size_compressed_non_consensus_branch_lengths;
+  //auto size_non_consensus_branch_lengths = size_compressed_non_consensus_branch_lengths;
 
   if(flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "RF-distance: " << rf_distance << "\n";
@@ -517,13 +525,17 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
   sdsl::bit_vector consensus_succinct_structure(4 * tip_count - rf_distance - 2, 0);
   sdsl::int_vector<> consensus_node_permutation(tip_count, 0, 32);
   std::vector<double> consensus_branch_lengths(2 * tip_count - 2 - (rf_distance / 2));
+
   unsigned int* consensus_node_id_to_branch_id = (unsigned int*) malloc ((tree1->inner_count * 3 + tree1->tip_count) * sizeof(unsigned int));
   assignBranchNumbers(root1, consensus_succinct_structure, consensus_node_permutation, consensus_branch_lengths, consensus_node_id_to_branch_id);
 
   std::vector<double> consensus_branch_diff_lengths(2 * tip_count - 2 - (rf_distance / 2));
   consensusDiff(tree1, tree2, root1, consensus_branch_diff_lengths);
 
-  auto size_consensus_branch_lengths = compressBranchLengths(consensus_branch_diff_lengths);
+  // TODO: later, new method
+  //auto size_consensus_branch_lengths = compressBranchLengthsAndStore(consensus_branch_diff_lengths, branch_lengths_consensus_file);
+  //auto size_consensus_branch_lengths = writeDoubleVector(consensus_branch_diff_lengths, branch_lengths_consensus_file);
+
 
   /*std::cout << "size consensus= " << consensus_branch_diff_lengths.size() * 8 << std::endl;
   std::cout << "complete size = " << sdsl::size_in_bytes(wt) << std::endl;
@@ -549,17 +561,26 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
     }
   }
 
+  std::vector<double> branches_common_tree2 = commonBranchesOrdered(root2->back, edgeIncidentPresent2);
+
+  std::vector<double> branches_tree2_compare = commonBranchesOrderedCompare(root2->back, root1->back, edgeIncidentPresent2);
+
+  auto size_consensus_branch_lengths = writeDoubleVector(branches_tree2_compare, branch_lengths_consensus_file);
+
   std::stack<pll_unode_t *> tasks;
   tasks.push(root2->back);
 
   std::vector<std::vector<int>> subtrees;
   std::vector<std::vector<int>> permutations;
+  std::vector<std::vector<double>> branch_lengths;
 
   // recursively find all subtrees that need to be inserted into the consensus tree
   while(!tasks.empty()) {
       std::vector<int> subtree;
       std::vector<int> leaf_order;
-      std::tie(subtree, leaf_order) = findRFSubtrees(tasks, edgeIncidentPresent2);
+      std::vector<double> branches;
+
+      std::tie(subtree, leaf_order, branches) = findRFSubtreesL(tasks, edgeIncidentPresent2);
 
       if(!subtree.empty() && leaf_order.size() > 2) {
           std::vector<int> subtree_extended;
@@ -708,6 +729,30 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
           std::cout << "\n";
         }
       }
+
+      // reorder branches
+      std::vector<std::vector<double>> branches_perms_1 (branch_lengths.size());
+      for (size_t i = 0; i < branches_perms_1.size(); i++) {
+        branches_perms_1[i] = branch_lengths[permutations_index[i]];
+      }
+
+      std::vector<std::vector<double>> branches_perms_2 (branch_lengths.size());
+      for (size_t i = 0; i < branches_perms_2.size(); i++) {
+        branches_perms_2[i] = branches_perms_1[permutations_index2[i]];
+      }
+
+
+
+      std::vector<double> non_consensus_branch_lengths;
+
+      for (size_t i = 0; i < branches_perms_2.size(); i++) {
+        non_consensus_branch_lengths.insert(non_consensus_branch_lengths.end(),
+        branches_perms_2[i].begin(), branches_perms_2[i].end());
+      }
+      
+      // auto size_non_consensus_branch_lengths = compressBranchLengthsAndStore(non_consensus_branch_lengths, branch_lengths_non_consensus_file);
+      auto size_non_consensus_branch_lengths = writeDoubleVector(non_consensus_branch_lengths, branch_lengths_non_consensus_file);
+
 
       subtrees = subtrees_perms_2;
 
