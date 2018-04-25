@@ -25,24 +25,3 @@ unsigned int pllmod_utree_split_rf_distance_extended(pll_split_t * s1,
                                                        int * s1_present,
                                                        int * s2_present,
                                                        unsigned int tip_count);
-
-unsigned int pllmod_utree_split_rf_distance_extended_with_branches(pll_split_t * s1,
-                                                       pll_split_t * s2,
-                                                       pll_unode_t ** splits_to_node1,
-                                                       pll_unode_t ** splits_to_node2,
-                                                       int * s1_present,
-                                                       int * s2_present,
-                                                       unsigned int tip_count);
-
-// original method: pllmod_utree_rf_distance(pll_unode_t * t1,
-//                                                 pll_unode_t * t2,
-//                                                 unsigned int tip_count)
-// this method is additionally given two splits_to_node arrays that allow the method
-// to compare the branch lengths of the branches that are associated with equal splits.
-// The method returns the amount of branches in the tree having the same length
-// PROBLEM: trivial bipartitions are not part of s1 and s1, but have a branch length as well!
-unsigned int same_branch_lengths(pll_split_t * s1,
-                                                       pll_split_t * s2,
-                                                       pll_unode_t ** splits_to_node1,
-                                                       pll_unode_t ** splits_to_node2,
-                                                       unsigned int tip_count);
