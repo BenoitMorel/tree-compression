@@ -227,6 +227,7 @@ void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vec
   bp_idx++;
   assert(bp_idx == bp.size());
   assert(iv_idx == iv.size());
+  assert(bl_idx == branch_lengths.size());
 }
 
 /*
@@ -569,7 +570,7 @@ bool treesEqualRec(pll_unode_t * node1, pll_unode_t * node2) {
       if(!subnodesEqual(temp1, temp2)) {
           return false;
       }
-      if(!treesEqual(temp1->back, temp2->back)) {
+      if(!treesEqualRec(temp1->back, temp2->back)) {
           return false;
       }
       temp1 = temp1->next;
