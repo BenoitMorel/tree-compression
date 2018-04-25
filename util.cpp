@@ -13,8 +13,6 @@ pll_unode_t * searchRoot(pll_utree_t * tree) {
 
   for (size_t i = 0; i < tree->tip_count; i++) {
     if(strcmp(tree->nodes[i]->label, "1") == 0) {
-      //printf("\nROOT: ");
-      //printNode(tree->nodes[i]);
       return tree->nodes[i];
     }
   }
@@ -82,8 +80,6 @@ int setTreeRec(pll_unode_t * tree) {
 void setTree(pll_unode_t * tree) {
   assert(tree->next == NULL);
   setTreeRec(tree->back);
-  //printf("\n\nSmallest: %i\n\n", setTreeRec(tree->back));
-
 }
 
 void orderTreeRec(pll_unode_t * tree) {
@@ -91,7 +87,6 @@ void orderTreeRec(pll_unode_t * tree) {
   if(tree->next != NULL) {
     // inner node
     assert(tree->next != NULL);
-    //assert(tree->next->next->next == tree); // tree is binary
 
     if(((intptr_t) tree->next->data) > ((intptr_t) tree->next->next->data)) {
         // swap tree->next and tree->next->next
@@ -133,18 +128,13 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
   if(tree->next == NULL) {
     // leaf
 
-    //printf("%i\t", *n);
     node_id_to_branch_id[tree->node_index] = *n;
     node_id_to_branch_id[tree->back->node_index] = *n;
     (*n)++;
     iv[*iv_idx] = atoi(tree->label);
     (*iv_idx)++;
-    //printf("%s, ", tree->label);
-    //printf("Node: ");
-    //printNode(tree);
   } else {
     // inner node
-
 
     // assign inner nodes to an array
     std::vector<pll_unode_t*> inner_nodes;
@@ -159,16 +149,9 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
     // sort the internal nodes
     std::sort (inner_nodes.begin(), inner_nodes.end(), innerNodeCompare);
 
-    /*for (size_t i = 0; i < inner_nodes.size(); i++) {
-      std::cout << (intptr_t) inner_nodes[i]->data << ", ";
-    }
-    std::cout << "\n";*/
-
-    //printf("%i\t", *n);
     node_id_to_branch_id[tree->node_index] = *n;
     node_id_to_branch_id[tree->back->node_index] = *n;
     (*n)++;
-    //printNode(tree);
 
     for (size_t i = 0; i < inner_nodes.size(); i++) {
       bp[*bp_idx] = 0;
@@ -177,38 +160,6 @@ void assignBranchNumbersRec(pll_unode_t * tree, unsigned int * bp_idx, sdsl::bit
       bp[*bp_idx] = 1;
       (*bp_idx)++;
     }
-
-
-    /*int n1 = (intptr_t) tree->next->data;
-    int n2 = (intptr_t) tree->next->next->data;
-    if(n1 < n2) {
-      //printNode(tree->next);
-      bp[*bp_idx] = 0;
-      (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
-      bp[*bp_idx] = 1;
-      (*bp_idx)++;
-      //printNode(tree->next->next);
-      bp[*bp_idx] = 0;
-      (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->next->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
-      bp[*bp_idx] = 1;
-      (*bp_idx)++;
-    } else {
-      //printNode(tree->next->next);
-      bp[*bp_idx] = 0;
-      (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->next->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
-      bp[*bp_idx] = 1;
-      (*bp_idx)++;
-      //printNode(tree->next);
-      bp[*bp_idx] = 0;
-      (*bp_idx)++;
-      assignBranchNumbersRec(tree->next->back, bp_idx, bp, iv_idx, iv, bl_idx, branch_lengths, n, node_id_to_branch_id);
-      bp[*bp_idx] = 1;
-      (*bp_idx)++;
-    }*/
-
   }
 }
 
@@ -220,7 +171,6 @@ void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vec
   bp[1] = 0;
   bp[2] = 1;
   iv[0] = 1; // first node is always the root
-  //printNode(tree);
   unsigned int n = 2;
   bp[3] = 0;
   unsigned int bp_idx = 4;
@@ -309,38 +259,6 @@ void traverseTree(pll_unode_t * root, void (*leaf_func)(pll_unode_t *),
   traverseTreeRec(root->back, leaf_func, inner_node_func);
 }
 
-uint64_t enc(double x, size_t precision) {
-    double expo = 1;
-    for (size_t i=0; i<precision; ++i) {
-      expo *= 10;
-    }
-
-    int64_t y;
-    uint64_t z;
-    y = llround(x*expo);
-    if ( y < 0 ) {
-        z = 2*static_cast<uint64_t>(-y)-1;
-    } else {
-        z = 2*static_cast<uint64_t>(y);
-    }
-    return z;
-}
-
-double dec(uint64_t z, size_t precision) {
-    double expo = 1;
-    for (size_t i=0; i<precision; ++i) {
-      expo *= 10;
-    }
-
-    int64_t y;
-    if ( z % 2 ) {
-        y = -static_cast<int64_t>((z+1)/2);
-    } else {
-        y = static_cast<int64_t>(z/2);
-    }
-    return (static_cast<double>(y))/expo;
-}
-
 void traverseConsensusRec(pll_unode_t * tree, std::vector<std::vector<int>> &perms) {
   assert(tree != NULL);
   if(tree->next == NULL) {
@@ -419,7 +337,7 @@ void traverseConsensus(pll_unode_t * tree, std::vector<pll_unode_t *> &subtree_r
   assert(tree->next == NULL);
   assert(tree->back != NULL);
 
-  traverseConsensusRec(tree->back, subtree_roots,  perms);
+  traverseConsensusRec(tree->back, subtree_roots, perms);
 
   assert(subtree_roots.size() == perms.size());
 }
@@ -501,27 +419,45 @@ bool isPermutation(const std::vector<int> &a, const std::vector<int> &b) {
 }
 
 void printTreeEqualError(std::string message, pll_unode_t * node1, pll_unode_t * node2) {
-  std::cout << message << "\n";
+  std::cout << "---------------------------------------------------\n" << message << "\n";
   std::cout << "Node 1:\n";
   printNode(node1);
-  std::cout << "\nNode 2:\n";
+  std::cout << "Node 2:\n";
   printNode(node2);
+  std::cout << "---------------------------------------------------\n";
 }
 
 bool subnodesEqual(pll_unode_t * subnode1, pll_unode_t * subnode2) {
-    if(strcmp(subnode1->label, subnode2->label) != 0) {
-      printTreeEqualError("labels of subnodes are not identical", subnode1, subnode2);
+    assert(subnode1 != NULL);
+    assert(subnode2 != NULL);
+
+    if(subnode1->label == NULL) {
+        if(subnode2->label != NULL) {
+            printTreeEqualError("labels of subnodes are not identical", subnode1, subnode2);
+            return false;
+        }
+    }
+    if(subnode2->label == NULL) {
+        if(subnode1->label != NULL) {
+            printTreeEqualError("labels of subnodes are not identical", subnode1, subnode2);
+            return false;
+        }
+    }
+    if(subnode1->label != NULL && subnode2->label != NULL) {
+        if(strcmp(subnode1->label, subnode2->label) != 0) {
+          printTreeEqualError("labels of subnodes are not identical", subnode1, subnode2);
+          return false;
+        }
+    }
+
+    if(fabs(subnode1->length - subnode2->length) > 0.0000001) {
+      printTreeEqualError("lengths of subnodes are not identical", subnode1, subnode2);
       return false;
     }
-    //TODO: undo
-    // if(subnode1->length != subnode2->length) {
-    //   printTreeEqualError("lengths of subnodes are not identical", subnode1, subnode2);
-    //   return false;
-    // }
     return true;
 }
 
-bool treesEqual(pll_unode_t * node1, pll_unode_t * node2) {
+bool treesEqualRec(pll_unode_t * node1, pll_unode_t * node2) {
     if(node1 == NULL) {
       if(node2 == NULL) {
         return true;
