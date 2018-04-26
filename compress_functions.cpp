@@ -37,14 +37,9 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
   // fill the created structures with the given tree
   assignBranchNumbers(root, succinct_structure, node_permutation, branch_lengths, node_id_to_branch_id);
 
-  auto size_topology = sdsl::size_in_bytes(succinct_structure);
-
-  // TODO: compress permutation
-  sdsl::util::bit_compress(node_permutation);
-  auto size_node_permutation = sdsl::size_in_bytes(node_permutation);
-
-  // TODO: compress branches
-  auto size_branches = writeDoubleVector(branch_lengths, branch_lengths_file);
+  auto size_topology = compressAndStoreSuccinctStructure(succinct_structure, succinct_structure_file);
+  auto size_node_permutation = compressAndStoreSimplePermutation(node_permutation, node_permutation_file);
+  auto size_branches = compressAndStoreBranchLengths(branch_lengths, branch_lengths_file);
 
   if (flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "Succinct representation: " << succinct_structure << "\n";
@@ -59,10 +54,6 @@ int simple_compression(const char * tree_file, const char * succinct_structure_f
     }
     std::cout << "\n\tcompressed size: " << size_branches << " bytes\n";
   }
-
-  // write stuctures to file
-  store_to_file(succinct_structure, succinct_structure_file);
-  store_to_file(node_permutation, node_permutation_file);
 
   if(flags & PRINT_COMPRESSION) {
     std::cout << "Simple compression size: " << size_topology
@@ -581,21 +572,6 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
     }
   }
 
-  // std::vector<double> non_consensus_branch_lengths;
-  // nonConsensusBranchLengths(root2, node_incident, non_consensus_branch_lengths);
-  //
-  // std::cout << "non_consensus_branch_lengths: ";
-  // for (auto nbl: non_consensus_branch_lengths) {
-  //   std::cout << nbl << " ";
-  // }
-  // std::cout << '\n';
-  //
-  // auto size_non_consensus_branch_lengths = compressBranchLengthsAndStore(non_consensus_branch_lengths, branch_lengths_non_consensus_file);
-
-  // take minimum
-  //auto size_non_consensus_branch_lengths = (size_compressed_non_consensus_branch_lengths < (non_consensus_branch_lengths.size()*8) ? size_compressed_non_consensus_branch_lengths : (non_consensus_branch_lengths.size()*8));
-  //auto size_non_consensus_branch_lengths = size_compressed_non_consensus_branch_lengths;
-
   if(flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "RF-distance: " << rf_distance << "\n";
   }
@@ -618,9 +594,11 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
   // sort all edges to contract
   sort(edges_to_contract.begin(), edges_to_contract.end());
 
-  // TODO: elias-fano encoding for the ordered edges?
-  sdsl::util::bit_compress(edges_to_contract);
-  auto size_edges_to_contract = sdsl::size_in_bytes(edges_to_contract);
+  // // TODO: elias-fano encoding for the ordered edges?
+  // sdsl::util::bit_compress(edges_to_contract);
+  // auto size_edges_to_contract = sdsl::size_in_bytes(edges_to_contract);
+
+  auto size_edges_to_contract = compressAndStoreRFEdgesToContract(edges_to_contract, edges_to_contract_file);
 
   if(flags & PRINT_COMPRESSION_STRUCTURES) {
     std::cout << "Edges to contract in tree 1: " << edges_to_contract << "\n";
@@ -671,7 +649,7 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
 
   std::vector<double> branches_tree2_compare = commonBranchesOrderedCompare(root2->back, root1->back, edgeIncidentPresent2);
 
-  auto size_consensus_branch_lengths = writeDoubleVector(branches_tree2_compare, branch_lengths_consensus_file);
+  auto size_consensus_branch_lengths = compressAndStoreBranchLengths(branches_tree2_compare, branch_lengths_consensus_file);
 
   std::stack<pll_unode_t *> tasks;
   tasks.push(root2->back);
@@ -824,9 +802,9 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
         non_consensus_branch_lengths.insert(non_consensus_branch_lengths.end(),
         branches_perms_2[i].begin(), branches_perms_2[i].end());
       }
-      
+
       // auto size_non_consensus_branch_lengths = compressBranchLengthsAndStore(non_consensus_branch_lengths, branch_lengths_non_consensus_file);
-      auto size_non_consensus_branch_lengths = writeDoubleVector(non_consensus_branch_lengths, branch_lengths_non_consensus_file);
+      auto size_non_consensus_branch_lengths = compressAndStoreBranchLengths(non_consensus_branch_lengths, branch_lengths_non_consensus_file);
 
 
       subtrees = subtrees_perms_2;
@@ -850,8 +828,10 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
       }
 
     // TODO: better compression?
-    sdsl::util::bit_compress(succinct_permutations);
-    auto size_permutations = sdsl::size_in_bytes(succinct_permutations);
+    // sdsl::util::bit_compress(succinct_permutations);
+    // auto size_permutations = sdsl::size_in_bytes(succinct_permutations);
+
+    auto size_permutations = compressAndStoreRFSubtreePermutations(succinct_permutations, node_permutations_file);
 
     if(flags & PRINT_COMPRESSION_STRUCTURES) {
       std::cout << "\nSuccinct permutation representation: " << succinct_permutations << "\n";
@@ -883,9 +863,9 @@ int rf_distance_compression(const char * tree1_file, const char * tree2_file,
     }
 
     // write stuctures to file
-    store_to_file(edges_to_contract, edges_to_contract_file);
+    // store_to_file(edges_to_contract, edges_to_contract_file);
     store_to_file(subtrees_succinct, subtrees_succinct_file);
-    store_to_file(succinct_permutations, node_permutations_file);
+    //store_to_file(succinct_permutations, node_permutations_file);
   }
 
   // TODO: free procs segmentation fault

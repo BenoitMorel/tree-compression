@@ -1,7 +1,6 @@
 #include "datastructure_compression_functions.h"
 
-size_t writeDoubleVectorSimple(const std::vector<double>& myVector, std::string filename)
-{
+size_t writeDoubleVectorUncompressed(const std::vector<double>& myVector, std::string filename) {
   std::ofstream ofs(filename, std::ios::out | std::ofstream::binary);
   std::ostream_iterator<char> osi{ ofs };
   const char* beginByte = (char*)&myVector[0];
@@ -12,8 +11,7 @@ size_t writeDoubleVectorSimple(const std::vector<double>& myVector, std::string 
   return myVector.size() * 8;
 }
 
-std::vector<double> readDoubleVectorSimple(std::string filename)
-{
+std::vector<double> readDoubleVectorUncompressed(std::string filename) {
   std::vector<char> buffer{};
   std::ifstream ifs(filename, std::ios::in | std::ifstream::binary);
   std::istreambuf_iterator<char> iter(ifs);
@@ -23,17 +21,6 @@ std::vector<double> readDoubleVectorSimple(std::string filename)
   memcpy(&newVector[0], &buffer[0], buffer.size());
   return newVector;
 }
-
-size_t writeDoubleVector(const std::vector<double>& myVector, std::string filename) {
-    return writeDoubleVectorSimple(myVector, filename);
-    //return compressBranchLengthsAndStore(myVector, filename.c_str());
-}
-
-std::vector<double> readDoubleVector(std::string filename) {
-    return readDoubleVectorSimple(filename);
-    //return uncompressBranchLengths(filename.c_str());
-}
-
 
 uint64_t enc(double x, size_t precision) {
     double expo = 1;
@@ -124,21 +111,82 @@ std::vector<double> uncompressBranchLengths(const char * file) {
   return loaded;
 }
 
-bool storeBranchLengthsUncompressed(std::vector<double> branch_lengths, const std::string& file_path ) {
-    std::ofstream os(file_path.c_str(), std::ios::binary | std::ios::out);
-    if ( !os.is_open() )
-        return false;
-    os.write(reinterpret_cast<const char*>(&branch_lengths[0]), std::streamsize(branch_lengths.size()*sizeof(double)));
-    os.close();
-    return true;
+
+size_t compressAndStoreSuccinctStructure(sdsl::bit_vector &succinct_structure, std::string filename) {
+
+  auto size = sdsl::size_in_bytes(succinct_structure);
+  store_to_file(succinct_structure, filename);
+
+  return size;
 }
 
-std::vector<double> loadBranchLengthsUncompressed(const std::string& file_path) {
-    std::vector<double> branch_lengths;
-    std::ifstream is(file_path.c_str(), std::ios::binary | std::ios::in);
-    if ( !is.is_open() )
-        return branch_lengths;
-    is.read(reinterpret_cast<char*>(&branch_lengths[0]), std::streamsize(branch_lengths.size()*sizeof(double)));
-    is.close();
-    return branch_lengths;
+size_t compressAndStoreSimplePermutation(sdsl::int_vector<> &permutation, std::string filename) {
+    // TODO: compress
+
+    sdsl::util::bit_compress(permutation);
+    auto size = sdsl::size_in_bytes(permutation);
+
+    store_to_file(permutation, filename);
+
+    return size;
+}
+
+size_t compressAndStoreRFEdgesToContract(sdsl::int_vector<> &edges_to_contract, std::string filename) {
+    // TODO: compress
+    // TODO: elias-fano encoding for the ordered edges?
+
+    sdsl::util::bit_compress(edges_to_contract);
+    auto size = sdsl::size_in_bytes(edges_to_contract);
+
+    store_to_file(edges_to_contract, filename);
+
+    return size;
+}
+
+size_t compressAndStoreRFSubtreePermutations(sdsl::int_vector<> &subtree_permutations, std::string filename) {
+    // TODO: compress
+    // TODO: cumlative sum and elias-fano encoding?
+
+    sdsl::util::bit_compress(subtree_permutations);
+    auto size = sdsl::size_in_bytes(subtree_permutations);
+
+    store_to_file(subtree_permutations, filename);
+
+    return size;
+}
+
+size_t compressAndStoreBranchLengths(std::vector<double> branch_lengths, std::string filename) {
+    // TODO: replace by encoding
+    return writeDoubleVectorUncompressed(branch_lengths, filename);
+}
+
+
+
+sdsl::bit_vector uncompressSuccinctStructure(std::string filename) {
+    sdsl::bit_vector succinct_tree_loaded;
+    load_from_file(succinct_tree_loaded, filename);
+    return succinct_tree_loaded;
+}
+
+sdsl::int_vector<> uncompressSimplePermutation(std::string filename) {
+    sdsl::int_vector<> node_permutation_loaded;
+    load_from_file(node_permutation_loaded, filename);
+    return node_permutation_loaded;
+}
+
+sdsl::int_vector<> uncompressRFEdgesToContract(std::string filename) {
+    sdsl::int_vector<> edges_to_contract_loaded;
+    load_from_file(edges_to_contract_loaded, filename);
+    return edges_to_contract_loaded;
+}
+
+sdsl::int_vector<> uncompressRFSubtreePermutations(std::string filename) {
+    sdsl::int_vector<> permutations_loaded;
+    load_from_file(permutations_loaded, filename);
+    return permutations_loaded;
+}
+
+std::vector<double> uncompressBranchLengths(std::string filename) {
+    // TODO: replace by encoding
+    return readDoubleVectorUncompressed(filename);
 }

@@ -8,14 +8,24 @@
 #include <sdsl/wavelet_trees.hpp>
 #include <algorithm>
 
-size_t writeDoubleVector(const std::vector<double>& myVector, std::string filename);
 
-std::vector<double> readDoubleVector(std::string filename);
+size_t compressAndStoreSuccinctStructure(sdsl::bit_vector &succinct_structure, std::string filename);
 
-size_t compressBranchLengthsAndStore(std::vector<double> branch_lengths, const char * file);
+size_t compressAndStoreSimplePermutation(sdsl::int_vector<> &permutation, std::string filename);
 
-std::vector<double> uncompressBranchLengths(const char * file);
+size_t compressAndStoreRFEdgesToContract(sdsl::int_vector<> &edges_to_contract, std::string filename);
 
-bool storeBranchLengthsUncompressed(std::vector<double> branch_lengths, const std::string& file_path);
+size_t compressAndStoreRFSubtreePermutations(sdsl::int_vector<> &edges_to_contract, std::string filename);
 
-std::vector<double> loadBranchLengthsUncompressed(const std::string& file_path);
+size_t compressAndStoreBranchLengths(std::vector<double> branch_lengths, std::string filename);
+
+
+sdsl::bit_vector uncompressSuccinctStructure(std::string filename);
+
+sdsl::int_vector<> uncompressSimplePermutation(std::string filename);
+
+sdsl::int_vector<> uncompressRFEdgesToContract(std::string filename);
+
+sdsl::int_vector<> uncompressRFSubtreePermutations(std::string filename);
+
+std::vector<double> uncompressBranchLengths(std::string filename);
