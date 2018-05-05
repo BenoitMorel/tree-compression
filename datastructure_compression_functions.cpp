@@ -54,14 +54,8 @@ double dec(uint64_t z, size_t precision) {
     return (static_cast<double>(y))/expo;
 }
 
-size_t compressBranchLengthsAndStore(std::vector<double> branch_lengths, const char * file) {
+size_t compressBranchLengthsAndStore(std::vector<double> branch_lengths, std::string filename) {
   std::vector<uint64_t> vec;
-
-  // std::cout << "stored: ";
-  // for (size_t i = 0; i < branch_lengths.size(); i++) {
-  //   std::cout << branch_lengths[i] << "  ";
-  // }
-  // std::cout << "\n";
 
   uint64_t z;
   for (size_t i = 0; i < branch_lengths.size(); i++) {
@@ -69,44 +63,31 @@ size_t compressBranchLengthsAndStore(std::vector<double> branch_lengths, const c
     vec.push_back(z);
   }
 
-  // std::cout << "vec: ";
-  // for (size_t i = 0; i < vec.size(); i++) {
-  //   std::cout << vec[i] << "  ";
-  // }
-  // std::cout << "\n";
-
   uint64_t max_number = *max_element(vec.begin(), vec.end());
   uint32_t width = sdsl::bits::hi(max_number);
-  sdsl::int_vector<0> seq(branch_lengths.size(), 0, width);
+
+  sdsl::int_vector<0> seq(branch_lengths.size(), 0, width+1);
+
   for (size_t i=0; i<vec.size(); ++i) {
        seq[i] = vec[i];
   }
+
   sdsl::wt_int<sdsl::rrr_vector<63>> wt;
   sdsl::construct_im(wt, seq);
-  sdsl::store_to_file(wt, file);
 
-  // for (size_t i = 0; i < wt.size(); i++) {
-  //   std::cout << wt[i] << "  ";
-  // }
-  // std::cout << "\n";
+  sdsl::store_to_file(wt, filename);
 
   return sdsl::size_in_bytes(wt);
 }
 
-std::vector<double> uncompressBranchLengths(const char * file) {
+std::vector<double> uncompressBranchLengthsWV(std::string filename) {
   sdsl::wt_int<sdsl::rrr_vector<63>> loaded_wt;
-  sdsl::load_from_file(loaded_wt, file);
+  sdsl::load_from_file(loaded_wt, filename);
 
   std::vector<double> loaded(loaded_wt.size());
   for (size_t i = 0; i < loaded_wt.size(); i++) {
     loaded[i] = dec(loaded_wt[i], 9);
   }
-
-  // std::cout << "loaded: ";
-  // for (size_t i = 0; i < loaded.size(); i++) {
-  //   std::cout << loaded[i] << "  ";
-  // }
-  // std::cout << "\n";
 
   return loaded;
 }
@@ -132,9 +113,6 @@ size_t compressAndStoreSimplePermutation(sdsl::int_vector<> &permutation, std::s
 }
 
 size_t compressAndStoreRFEdgesToContract(sdsl::int_vector<> &edges_to_contract, std::string filename) {
-    // TODO: compress
-    // TODO: elias-fano encoding for the ordered edges?
-
     sdsl::util::bit_compress(edges_to_contract);
     auto size = sdsl::size_in_bytes(edges_to_contract);
 
@@ -144,9 +122,6 @@ size_t compressAndStoreRFEdgesToContract(sdsl::int_vector<> &edges_to_contract, 
 }
 
 size_t compressAndStoreRFSubtreePermutations(sdsl::int_vector<> &subtree_permutations, std::string filename) {
-    // TODO: compress
-    // TODO: cumlative sum and elias-fano encoding?
-
     sdsl::util::bit_compress(subtree_permutations);
     auto size = sdsl::size_in_bytes(subtree_permutations);
 
@@ -156,8 +131,7 @@ size_t compressAndStoreRFSubtreePermutations(sdsl::int_vector<> &subtree_permuta
 }
 
 size_t compressAndStoreBranchLengths(std::vector<double> branch_lengths, std::string filename) {
-    // TODO: replace by encoding
-    return writeDoubleVectorUncompressed(branch_lengths, filename);
+    return compressBranchLengthsAndStore(branch_lengths, filename);
 }
 
 
@@ -187,6 +161,5 @@ sdsl::int_vector<> uncompressRFSubtreePermutations(std::string filename) {
 }
 
 std::vector<double> uncompressBranchLengths(std::string filename) {
-    // TODO: replace by encoding
-    return readDoubleVectorUncompressed(filename);
+    return uncompressBranchLengthsWV(filename);
 }

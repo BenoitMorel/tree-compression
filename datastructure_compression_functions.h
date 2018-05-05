@@ -3,6 +3,7 @@
 
 #include <sdsl/bit_vectors.hpp>
 #include <sdsl/int_vector.hpp>
+#include <sdsl/sd_vector.hpp>
 #include <sdsl/vectors.hpp>
 #include <sdsl/select_support_mcl.hpp>
 #include <sdsl/wavelet_trees.hpp>
