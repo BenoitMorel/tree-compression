@@ -1,5 +1,6 @@
 #include "modified_library_functions.h"
 
+// copied because "compare_splits" uses it internally
 unsigned int bitv_length(unsigned int bit_count)
 {
   unsigned int split_size = sizeof(pll_split_base_t) * 8;

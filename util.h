@@ -76,7 +76,10 @@ void assignBranchNumbers(pll_unode_t * tree, sdsl::bit_vector &bp, sdsl::int_vec
  */
 void contractEdge(pll_unode_t * node);
 
-// TODO
+/**
+ * Destroys the given pll_utree_t.
+ * @param tree the tree
+ */
 void pll_utree_destroy_consensus(pll_utree_t * tree);
 
 /**

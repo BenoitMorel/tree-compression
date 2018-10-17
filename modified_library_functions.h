@@ -1,12 +1,10 @@
-/*
- This header contains modified methods from the library for the purpose of
- working with the rf distance in different ways.
+/**
+ *  Contains modified methods from the PPL modules. The changes were necessary
+ *  in order to incorporate the rf distance in different ways.
  */
 
 #include <libpll/pll_tree.h>
 
-// this method is just copied because "compare_splits" uses it internally and
-// it is not part of pll_tree.h
 unsigned int bitv_length(unsigned int bit_count);
 
 // original method from the library.
@@ -15,7 +13,7 @@ int compare_splits (pll_split_t s1,
                            pll_split_t s2,
                            unsigned int split_len);
 
-// original method: pllmod_utree_rf_distance(pll_unode_t * t1,
+// original method is: pllmod_utree_rf_distance(pll_unode_t * t1,
 //                                                 pll_unode_t * t2,
 //                                                 unsigned int tip_count)
 // this method is additionally given two int arrays that will tell which

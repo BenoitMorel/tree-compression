@@ -9,6 +9,11 @@
 #include <sdsl/wavelet_trees.hpp>
 #include <algorithm>
 
+/**
+ * This class contains methods to compress and store the individual data structures
+ * as well as methods to decompress them.
+ */
+
 
 size_t compressAndStoreSuccinctStructure(sdsl::bit_vector &succinct_structure, std::string filename);
 
