@@ -15,9 +15,13 @@ static void fatal (const char * format, ...);
 void simpleCompressionEqual(const char * tree_file) {
   std::cout << "Simple compression: \n\n";
 
+  // set flags to choose what information to print out on the console
+  // (see compress_functions.h for details)
+  int print_comp = PRINT_COMPRESSION + PRINT_COMPRESSION_STRUCTURES;
+
   // compress the given tree and store the structures to file
   simple_compression(tree_file, "succinct_tree.sdsl", "node_permutation.sdsl",
-                      "branch_lengths_uncompressed.sdsl", PRINT_COMPRESSION + PRINT_COMPRESSION_STRUCTURES);
+                      "branch_lengths_uncompressed.sdsl", print_comp);
 
   pll_utree_t * tree = pll_utree_parse_newick(tree_file);
 
@@ -34,7 +38,8 @@ void simpleCompressionEqual(const char * tree_file) {
   pll_unode_t * tree_loaded = simple_uncompression(succinct_tree_loaded, node_permutation_loaded, branch_lengths);
 
   // print the newick reconstruction of the loaded tree
-  std::cout << toNewick(tree_loaded) << "\n";
+  // std::cout << "Newick representation original: " << toNewick(root) << "\n\n\n";
+  std::cout << "Newick representation reconstruction: " << toNewick(tree_loaded) << "\n";
 
   // print whether input tree and loaded tree are equal
   std::cout << "Trees equal: " << std::boolalpha << treesEqual(root->back, tree_loaded->back) << "\n-----------------------------------------------------------\n";
@@ -48,11 +53,15 @@ void simpleCompressionEqual(const char * tree_file) {
 void RFCompressionEqual(const char * tree_file1, const char * tree_file2) {
     std::cout << "RF-compression: \n\n";
 
+    // set flags to choose what information to print out on the console
+    // (see compress_functions.h for details)
+    int print_comp = 0;//PRINT_COMPRESSION + PRINT_COMPRESSION_STRUCTURES;
+
     // compress the given trees and store the structures to file
     rf_distance_compression(tree_file1, tree_file2, "edges_to_contract.sdsl",
                       "subtrees_succinct.sdsl", "node_permutations.sdsl",
                       "consensus_branches.sdsl", "non_consensus_branches.sdsl",
-                      PRINT_COMPRESSION + PRINT_COMPRESSION_STRUCTURES);
+                      print_comp);
 
     // load the decompress structures from disc
     sdsl::int_vector<> edges_to_contract_loaded = uncompressRFEdgesToContract("edges_to_contract.sdsl");
@@ -77,10 +86,12 @@ void RFCompressionEqual(const char * tree_file1, const char * tree_file2) {
     setTree(root2);
     orderTree(root2);
 
+    // print the newick reconstruction of the loaded tree
     // std::cout << toNewick(root2) << "\n\n\n";
-    // std::cout << toNewick(tree_rf) << "\n";
+    std::cout << "Newick representation reconstruction: " << toNewick(tree_rf) << "\n";
 
     assert(treesEqual(tree_rf->back, root2->back));
+
     // check whether the loaded second tree is equal to the decompressed second tree.
     std::cout << "\n" << std::boolalpha << "trees equal: " << treesEqual(tree_rf->back, root2->back) << "\n";
 }
