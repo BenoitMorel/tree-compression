@@ -30,6 +30,5 @@ git clone https://github.com/simongog/sdsl-lite.git
 
 * **Axel Trefzer** - *Initial work* - [axeltref](https://github.com/axeltref)
 * **Alexis Stamatakis** - *Ideas and advice* - [stamatak](https://github.com/stamatak)
-
-See also the list of [contributors](https://github.com/your/project/contributors) who participated in this project.
+* **Simon Gog** - *Initial ideas* - [simongog](https://github.com/simongog)
 
