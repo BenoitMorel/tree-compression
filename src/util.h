@@ -142,3 +142,11 @@ bool treesEqual(pll_unode_t * tree1, pll_unode_t * tree2);
  * @return      internal predecessor
  */
 pll_unode_t * internalPredecessor(pll_unode_t * node);
+
+/**
+ * Return the file name of a given path
+ *
+ * @param  s path
+ * @return   file name
+ */
+std::string getFileName(const std::string& s);
