@@ -14,6 +14,8 @@
  * as well as methods to decompress them.
  */
 
+// precision to use in compression of branch lengths (number of decimals)
+#define PRECISION 9
 
 size_t compressAndStoreSuccinctStructure(sdsl::bit_vector &succinct_structure, std::string filename);
 

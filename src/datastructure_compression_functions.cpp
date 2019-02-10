@@ -59,7 +59,7 @@ size_t compressBranchLengthsAndStore(std::vector<double> branch_lengths, std::st
 
   uint64_t z;
   for (size_t i = 0; i < branch_lengths.size(); i++) {
-    z = enc(branch_lengths[i], 9);
+    z = enc(branch_lengths[i], PRECISION);
     vec.push_back(z);
   }
 
@@ -86,7 +86,7 @@ std::vector<double> uncompressBranchLengthsWV(std::string filename) {
 
   std::vector<double> loaded(loaded_wt.size());
   for (size_t i = 0; i < loaded_wt.size(); i++) {
-    loaded[i] = dec(loaded_wt[i], 9);
+    loaded[i] = dec(loaded_wt[i], PRECISION);
   }
 
   return loaded;
