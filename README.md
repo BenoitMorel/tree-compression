@@ -11,7 +11,7 @@ make
 ```
 You then can run a simple compression on two trees with 500 taxa stored in the folder 500/ by running
 ```
-./main 500/tree_1.nwk 500/tree_2.nwk
+./main ../data/500/tree_1.nwk ../data/500/tree_2.nwk
 ```
 Also, you can change the trees by changing the number of the tree (e.g. using tree_10.nwk). There are 200 trees in the folder. Additionally, trees with 27 taxa are stored in 027/. 
 
@@ -28,7 +28,7 @@ git clone https://github.com/simongog/sdsl-lite.git
 
 ## Authors
 
-* **Axel Trefzer** - *Initial work* - [axeltref](https://github.com/axeltref)
+* **Axel Trefzer** - [axeltref](https://github.com/axeltref)
 * **Alexis Stamatakis** - *Ideas and advice* - [stamatak](https://github.com/stamatak)
 * **Simon Gog** - *Initial ideas* - [simongog](https://github.com/simongog)
 
