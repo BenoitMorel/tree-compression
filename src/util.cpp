@@ -477,7 +477,7 @@ bool subnodesEqual(pll_unode_t * subnode1, pll_unode_t * subnode2) {
         }
     }
 
-    if(fabs(subnode1->length - subnode2->length) > 0.0000001) {
+    if(fabs(subnode1->length - subnode2->length) > 0.000001) {
       printTreeEqualError("lengths of subnodes are not identical", subnode1, subnode2);
       return false;
     }
