@@ -113,10 +113,25 @@ size_t compressAndStoreSimplePermutation(sdsl::int_vector<> &permutation, std::s
 }
 
 size_t compressAndStoreRFEdgesToContract(sdsl::int_vector<> &edges_to_contract, std::string filename) {
-    sdsl::util::bit_compress(edges_to_contract);
-    auto size = sdsl::size_in_bytes(edges_to_contract);
+    std::vector<uint64_t> vec;
+    vec.push_back(edges_to_contract[0]);
+    for (size_t i = 0; i < edges_to_contract.size()-1; i++) {
+        vec.push_back(edges_to_contract[i+1]-edges_to_contract[i]);
+    }
 
-    store_to_file(edges_to_contract, filename);
+    uint64_t max_number = *max_element(vec.begin(), vec.end());
+    uint32_t width = sdsl::bits::hi(max_number);
+
+    sdsl::int_vector<0> seq(edges_to_contract.size(), 0, width+1);
+
+    for (size_t i=0; i<vec.size(); ++i) {
+       seq[i] = vec[i];
+    }
+
+    sdsl::util::bit_compress(seq);
+
+    auto size = sdsl::size_in_bytes(seq);    
+    store_to_file(seq, filename);
 
     return size;
 }
@@ -151,7 +166,23 @@ sdsl::int_vector<> uncompressSimplePermutation(std::string filename) {
 sdsl::int_vector<> uncompressRFEdgesToContract(std::string filename) {
     sdsl::int_vector<> edges_to_contract_loaded;
     load_from_file(edges_to_contract_loaded, filename);
-    return edges_to_contract_loaded;
+
+    std::vector<uint64_t> vec;
+    vec.push_back(edges_to_contract_loaded[0]);
+    for (size_t i = 1; i < edges_to_contract_loaded.size(); i++) {
+        vec.push_back(vec[i-1] + edges_to_contract_loaded[i]);
+    }
+
+    uint64_t max_number = *max_element(vec.begin(), vec.end());
+    uint32_t width = sdsl::bits::hi(max_number);
+
+    sdsl::int_vector<0> seq(edges_to_contract_loaded.size(), 0, width+1);
+
+    for (size_t i=0; i<vec.size(); ++i) {
+       seq[i] = vec[i];
+    }
+
+    return seq;
 }
 
 sdsl::int_vector<> uncompressRFSubtreePermutations(std::string filename) {
