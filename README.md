@@ -4,6 +4,9 @@ Simple prototype implementation of tree compression methods (a simple compressio
 
 ## Getting Started
 
+(In this fork, one can also run ./install.sh to download and build the dependencies, and build the project)
+
+
 Download the repository, install the required libraries PLL modules and SLSL-lite. 
 Once you have installed the two libraries, you can compile the project running
 ```
