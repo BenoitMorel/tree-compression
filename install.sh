@@ -22,7 +22,7 @@ cd ../..
 
 cd src
 libpll=$deps/libpll
-mkdir libpll
+mkdir $libpll
 cp ../pll-modules/src/tree/pll_tree.h $libpll
 cp ../pll-modules/libs/libpll/src/pll.h  $libpll
 cp ../pll-modules/build/libs/libpll/src/libpll.a $deps

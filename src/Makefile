@@ -11,9 +11,9 @@ endif
 WARN=-Wall -Wsign-compare $(ADD_WARN)
 
 CFLAGS = -g -O3 -Wall -Wsign-compare $(PROFILING) $(WARN)
-CPPFLAGS = -std=c++11 -I./deps/
-LDFLAGS = -L./deps/ -lpllmodtree -lpllmodutil -lpllmodalgorithm -lpllmodbinary -lpllmodmsa -lpllmodoptimize -lpll -lm -lsdsl -ldivsufsort -ldivsufsort64 -lstdc++
-INCLUDEFLAGS = -Ldeps/
+CPPFLAGS = -std=c++11 -I../deps/
+LDFLAGS = -L../deps/ -lpllmodtree -lpllmodutil -lpllmodalgorithm -lpllmodbinary -lpllmodmsa -lpllmodoptimize -lpll -lm -lsdsl -ldivsufsort -ldivsufsort64 -lstdc++
+INCLUDEFLAGS = -L../deps/
 
 OBJS = main.o modified_library_functions.o util.o compress_functions.o uncompress_functions.o datastructure_compression_functions.o
 PROG = main
