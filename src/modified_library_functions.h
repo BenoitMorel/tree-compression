@@ -5,7 +5,7 @@
 
 #include <libpll/pll_tree.h>
 
-unsigned int bitv_length(unsigned int bit_count);
+//unsigned int bitv_length(unsigned int bit_count);
 
 // original method from the library.
 // return the amount of same splits.

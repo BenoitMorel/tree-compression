@@ -11,8 +11,9 @@ endif
 WARN=-Wall -Wsign-compare $(ADD_WARN)
 
 CFLAGS = -g -O3 -Wall -Wsign-compare $(PROFILING) $(WARN)
-CPPFLAGS = -std=c++11
-LDFLAGS = -lpll_tree -lpll -lm -lsdsl -ldivsufsort -ldivsufsort64 -lstdc++
+CPPFLAGS = -std=c++11 -I./deps/
+LDFLAGS = -L./deps/ -lpllmodtree -lpllmodutil -lpllmodalgorithm -lpllmodbinary -lpllmodmsa -lpllmodoptimize -lpll -lm -lsdsl -ldivsufsort -ldivsufsort64 -lstdc++
+INCLUDEFLAGS = -Ldeps/
 
 OBJS = main.o modified_library_functions.o util.o compress_functions.o uncompress_functions.o datastructure_compression_functions.o
 PROG = main
@@ -24,7 +25,7 @@ main : $(OBJS)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(PROG)
 
 %.o: %.c %.cpp
-	$(CC) $(CFLAGS) -c -o $@ $<
+	$(CC) $(CPPFLAGS) $(INCLUDEFLAGS) -c -o $@ $<
 
 clean:
 	rm -f *~ $(OBJS) $(PROG)

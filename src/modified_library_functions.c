@@ -1,6 +1,7 @@
 #include "modified_library_functions.h"
 
 // copied because "compare_splits" uses it internally
+/*
 unsigned int bitv_length(unsigned int bit_count)
 {
   unsigned int split_size = sizeof(pll_split_base_t) * 8;
@@ -8,6 +9,7 @@ unsigned int bitv_length(unsigned int bit_count)
 
   return bit_count / split_size + (split_offset>0);
 }
+*/
 
 /*
  * The order of the splits is not really significant, as long as the two
